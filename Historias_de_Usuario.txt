@@ -1,0 +1,87 @@
+Historia de usuario 1: Creación de un producto
+Como vendedor,
+quiero poder añadir un nuevo producto para la venta,
+para que los compradores puedan verlo y comprarlo.
+Criterios de aceptación:
+* El sistema me permite subir varias imágenes para mi publicación.
+* El sistema me permite ingresar el nombre, la descripción y el precio del
+producto.
+* El sistema me permite seleccionar una o más categorías para mi producto.
+* Una vez que guardo la publicación, esta se muestra en mi lista de productos
+activos.
+
+Historia de usuario 2: Edición de un producto existente
+Como vendedor,
+quiero poder modificar la información de un producto que ya he publicado,
+para actualizar los detalles, corregir errores o cambiar el precio.
+Criterios de aceptación:
+* El sistema me permite editar el nombre, la descripción, el precio y las categorías
+de un producto.
+* El sistema me permite añadir o eliminar imágenes de la publicación.
+* Los cambios se ven reflejados de inmediato en la página de mi producto.
+
+
+Historia de usuario 3: Gestión de categorías de productos
+Como vendedor,
+quiero poder asignar categorías a mis productos de forma sencilla,
+para que los compradores puedan encontrarlos fácilmente al navegar por el sitio
+web.
+Criterios de aceptación:
+* El sistema me muestra una lista clara de las categorías disponibles.
+* Puedo seleccionar múltiples categorías para un mismo producto.
+* Cuando un usuario filtra por una categoría, mi producto aparece en los
+resultados de búsqueda.
+
+
+Historia de usuario 4: Visualización del estado de la publicación
+Como vendedor,
+quiero ver el estado de mi publicación (activa, pendiente, vendida),
+para saber qué productos están disponibles y cuáles no.
+Criterios de aceptación:
+* Mi tablero de vendedor muestra un listado de todos mis productos.
+* Cada producto tiene una etiqueta o ícono que indica su estado (por ejemplo:
+"Activo", "Vendido", "Inactivo").
+* Puedo filtrar mi lista de productos por estado.
+
+Historia de usuario 5: Eliminación de una publicación
+Como vendedor,
+quiero poder eliminar una publicación que ya no deseo tener activa,
+para quitar el producto de la tienda y de mi inventario.
+Criterios de aceptación:
+* El sistema me ofrece una opción clara (como un botón o un enlace) para
+"Eliminar" mi publicación.
+* Antes de eliminarla permanentemente, el sistema me pide una confirmación
+para evitar borrados accidentales.
+* Una vez que confirmo la eliminación, la publicación y todos sus datos
+(incluyendo fotos y descripciones) desaparecen del sitio web.
+* El producto eliminado ya no aparece en mi lista de publicaciones activas.
+
+Historia de usuario 6: Marcar una publicación como vendida
+Como vendedor,
+quiero poder marcar mi publicación como vendida una vez que se ha completado
+la transacción,
+para que el producto no aparezca disponible para otros compradores y quede
+registrado en mi historial.
+Criterios de aceptación:
+* El sistema me ofrece una opción clara para "Marcar como vendido" en la página
+de mi publicación o en mi panel de control.
+* Una vez que confirmo la acción, el estado del producto cambia a "Vendido" y se
+actualiza en mi lista de productos.
+* La publicación ya no es visible para los compradores en la tienda.
+* El producto vendido se archiva en una sección de mi perfil de vendedor (por
+ejemplo, "Historial de ventas" o "Productos vendidos"), en lugar de ser eliminado
+por completo.
+
+Historia de usuario 7: Reordenamiento de imágenes de un producto
+Como vendedor,
+quiero poder reordenar las imágenes de mi producto de manera fácil e intuitiva,
+para que la foto principal y las más atractivas se muestren primero, captando el
+interés de los compradores de inmediato.
+Criterios de aceptación:
+* Al editar un producto, el sistema me permite arrastrar y soltar las miniaturas de
+las imágenes para cambiar su orden.
+* La primera imagen en la lista de mi panel de edición se convierte
+automáticamente en la imagen principal de la publicación.
+* Los cambios de orden se guardan y se reflejan en la vista del producto para los
+compradores.
+
