@@ -7,16 +7,22 @@ export interface UserDocument extends User, Document {
   id: string; // Mongoose crea un getter 'id' que devuelve el _id como string
 }
 
-@Schema({
+@Schema({     //Existía error en ret.id
   timestamps: true,
   toJSON: {
     virtuals: true,
-    transform: (_, ret) => {
+    transform: (_doc, ret: any) => {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;
       return ret;
-    },
+    }
+    /*transform: (_, ret) => {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    },*/
   },
 })
 export class User {
