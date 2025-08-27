@@ -1,0 +1,11 @@
+{
+  "titulo": "Zapatillas deportivas",
+  "descripcion": "Zapatillas Nike Air Max originales, talla 42, color negro con detalles rojos.",
+  "precio": 35000,
+  "categoria": "64f0c7d5f9e3d2c5a1234567",
+  "imagenes": [
+    "64f0c7f1f9e3d2c5a1234568",
+    "64f0c800f9e3d2c5a1234569"
+  ],
+  "vendedorId": "user_12345"
+}
