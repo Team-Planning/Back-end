@@ -19,6 +19,15 @@ Este backend utiliza las siguientes tecnologías:
 
 ```
 backend/
+├── docs/
+│   └── diagramas/
+│       ├── crear-publicacion.jpeg
+│       ├── editar-publicacion.jpeg
+│       ├── moderar-publicaciones.jpeg
+│       ├── obtener-detalles-publicacion.jpeg
+│       ├── obtener-vistas-previas-publicaciones-filtradas.jpeg
+│       ├── obtener-vistas-previas-publicaciones.jpeg
+│       └── solicitar-eliminacion.jpeg
 ├── src/
 │   ├── app.module.ts                # Módulo principal
 │   ├── main.ts                      # Punto de entrada
