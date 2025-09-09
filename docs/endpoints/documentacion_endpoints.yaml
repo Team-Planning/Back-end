@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: PulgaShop - Microservicio de Publicaciones y Multimedia
+  version: 1.0.0
+  description: API del microservicio de Publicaciones y Multimedia para el proyecto PulgaShop. Este servicio gestiona la creación, edición, eliminación, obtención y moderación de publicaciones.
+
+servers:
+  - url: mongodb+srv://DanielBelozo:XRNc6f7PVTLNEFmp@pulgashoppost.7txazxa.mongodb.net/?retryWrites=true&w=majority&appName=PulgaShopPost
+    description: Servidor de publicaciones
+  - url: servidor aquí
+    description: Servidor de multimedia
+
+paths:
+  /publicaciones:
+    post:
+      summary: Crear una nueva publicación
+      description: Permite a un usuario autenticado crear una publicación asociada a un producto. El registro queda inicialmente en estado EN_REVISION y se notifica al equipo de moderación. Las imágenes se envían como archivos binarios y son almacenadas en el servicio de multimedia.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [titulo, descripcion, precio, stock, productoId, vendedorId, imagenes]
+              properties:
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+                precio:
+                  type: number
+                  format: float
+                stock:
+                  type: integer
+                  format: int32
+                productoId:
+                  type: string
+                vendedorId:
+                  type: string
+                imagenes:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "201":
+          description: Publicación creada exitósamente, en estado EN_REVISION.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  idPublicacion:
+                    type: string
+                  estado:
+                    type: string
+                    enum: [EN_REVISION, PENDIENTE, ACTIVA, RECHAZADA, ELIMINADA]
+                  mensaje:
+                    type: string
+        "400":
+          description: Datos inválidos o incompletos.
+        "401":
+          description: Usuario no autenticado.
+        "500":
+          description: Error interno al crear la publicación.
+
+  /publicaciones/{idPublicacion}:
+    get:
+      summary: Obtener detalles de una publicación
+      parameters:
+        - in: path
+          name: idPublicacion
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Detalles completos de la publicación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  idPublicacion: { type: string }
+                  titulo: { type: string }
+                  descripcion: { type: string }
+                  precio: 
+                    type: number
+                    format: float
+                  stock: 
+                    type: integer
+                    format: int32
+                  imagenes:
+                    type: array
+                    items: 
+                      type: string
+                      format: uri
+                  vendedor:
+                    type: object
+                    properties:
+                      nombre: { type: string }
+                      reputacion: 
+                        type: number
+                        format: float
+                  reseñas:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        usuario: { type: string }
+                        comentario: { type: string }
+                        calificacion: 
+                          type: integer
+                          format: int32
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al obtener la publicación
+
+    put:
+      summary: Editar una publicación
+      parameters:
+        - in: path
+          name: idPublicacion
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+                precio:
+                  type: number
+                  format: float
+                imagenesAgregar:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                imagenesEliminar:
+                  type: array
+                  items:
+                    type: string
+                    example: "img_12345"
+                ordenImagenes:
+                  type: array
+                  items:
+                    type: string
+                    example: "img_12345"
+      responses:
+        "200":
+          description: Publicación actualizada exitosamente
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Usuario sin permisos
+        "500":
+          description: Error al actualizar
+
+    delete:
+      summary: Eliminar publicación
+      description: Marca la publicación como eliminada, deshabilita el producto en inventario, y notifica a los clientes que lo tengan en carrito.
+      parameters:
+        - in: path
+          name: idPublicacion
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Publicación eliminada exitosamente
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al eliminar publicación
+
+    /publicaciones/vistas-previas:
+    get:
+      summary: Obtener vistas previas de publicaciones
+      description: >
+        Retorna una lista de publicaciones activas con stock disponible, combinando 
+        información de precios y stock desde el servicio de Vendedores e Inventario 
+        y la imagen principal desde el servicio de Multimedia. 
+        Se pueden aplicar filtros opcionales.
+      parameters:
+        - in: query
+          name: nombre
+          schema: { type: string }
+        - in: query
+          name: categoria
+          schema: { type: string }
+        - in: query
+          name: precio_min
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: precio_max
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: idVendedor
+          schema: { type: string }
+        - in: query
+          name: pagina
+          schema:
+            type: integer
+            format: int32
+          default: 1
+        - in: query
+          name: limite
+          schema:
+            type: integer
+            format: int32
+          default: 10
+      responses:
+        "200":
+          description: >
+            Lista de publicaciones activas con stock disponible. 
+            La respuesta puede ser una lista vacía si no hay coincidencias con los filtros.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idPublicacion: { type: string }
+                    titulo: { type: string }
+                    precio:
+                      type: number
+                      format: float
+                    stock:
+                      type: integer
+                      format: int32
+                    imagenPrincipal:
+                      type: string
+                      format: uri
+        "400":
+          description: Filtros inválidos o parámetros incorrectos.
+        "404":
+          description: No se encontraron publicaciones que coincidan con los filtros.
+        "500":
+          description: Error interno al obtener publicaciones o datos relacionados.
+
+  /publicaciones/moderacion:
+    get:
+      summary: Obtener publicaciones en revisión
+      responses:
+        "200":
+          description: Lista de publicaciones pendientes de revisión
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idPublicacion: { type: string }
+                    titulo: { type: string }
+                    imagenPrincipal: 
+                      type: string
+                      format: uri
+        "500":
+          description: Error al obtener publicaciones
+
+  /publicaciones/moderacion/{idPublicacion}:
+    post:
+      summary: Aprobar o rechazar publicación
+      parameters:
+        - in: path
+          name: idPublicacion
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accion]
+              properties:
+                accion:
+                  type: string
+                  enum: [APROBAR, RECHAZAR]
+      responses:
+        "200":
+          description: Estado de publicación actualizado
+        "400":
+          description: Acción inválida
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al cambiar estado
