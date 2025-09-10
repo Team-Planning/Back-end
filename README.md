@@ -2,6 +2,13 @@
 
 Este proyecto es un backend desarrollado con NestJS y MongoDB para el template GPI de la Universidad de Valparaíso. El backend proporciona una API RESTful que se integra con el frontend React, ofreciendo funcionalidades de autenticación y gestión de usuarios.
 
+## Grupo 2: Roles
+Yoselin Cornejo	yoselin.cornejo@estudiantes.uv.cl	UI/UX
+Lorena Uribe	lorena.uribe@estudiantes.uv.cl	Seguridad
+Andrés Gonzalez	andres.gonzalezvi@estudiantes.uv.cl	Back End y Servicios
+Daniel Belozo	daniel.belozo@estudiantes.uv.cl	Base de Datos
+Stefanny Montero	stefanny.montero@estudiantes.uv.cl	UI/UX
+
 ## 🚀 Tecnologías
 
 Este backend utiliza las siguientes tecnologías:
