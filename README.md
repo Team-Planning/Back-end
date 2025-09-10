@@ -7,7 +7,7 @@ Este proyecto es un backend desarrollado con NestJS y MongoDB para el template G
 - Stefanny Montero	stefanny.montero@estudiantes.uv.cl	UI/UX
 - Andrés Gonzalez	andres.gonzalezvi@estudiantes.uv.cl	Back End y Servicios
 - Daniel Belozo	daniel.belozo@estudiantes.uv.cl	Base de Datos
-- Lorena Uribe	lorena.uribe@estudiantes.uv.cl	Seguridad
+- Lorena Uribe	lorena.uribe@estudiantes.uv.cl	Seguridad/Gestión 
 
 ## 🚀 Tecnologías
 
