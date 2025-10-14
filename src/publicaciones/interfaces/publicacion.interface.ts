@@ -7,7 +7,7 @@ export interface Publicacion extends Document {
   categoria: string;
   imagenes: string[];
   vendedorId: string;
-  estado: 'borrador' | 'revision' | 'activo' | 'pausado' | 'vendida' | 'rechazada';
+  estado: 'borrador' | 'en revision' | 'rechazada' | 'activa' | 'pausada' | 'eliminada';
   fechaCreacion: Date;
   fechaModificacion?: Date;
   comentarioModerador?: string;

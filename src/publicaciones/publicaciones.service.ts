@@ -25,7 +25,7 @@ export class PublicacionesService {
         titulo: dto.titulo,
         descripcion: dto.descripcion,
         categoriaId: dto.categoriaId,
-        estado: dto.estado || 'EN REVISION',
+        estado: dto.estado || 'en revision',
         multimedia: dto.multimedia
           ? {
               create: dto.multimedia.map((m) => ({
@@ -120,11 +120,17 @@ export class PublicacionesService {
 
   async eliminar(id: string) {
     // Verificar que la publicación existe
-    await this.obtenerPorId(id);
+    const publicacion = await this.obtenerPorId(id);
 
-    // Prisma eliminará automáticamente las multimedia y moderaciones relacionadas (Cascade)
-    await this.prisma.publicacion.delete({
+    // Verificar que no esté ya eliminada
+    if (publicacion.estado === 'eliminada') {
+      throw new BadRequestException('La publicación ya está eliminada');
+    }
+
+    // Actualizar el estado a 'eliminada'
+    await this.prisma.publicacion.update({
       where: { id },
+      data: { estado: 'eliminada' }
     });
 
     return { mensaje: 'Publicación eliminada exitosamente' };
