@@ -2,44 +2,36 @@ import {
   IsString,
   IsOptional,
   MaxLength,
-  IsNumber,
-  Min,
-  IsMongoId,
-  IsArray,
-  ArrayMaxSize
+  MinLength,
+  IsMongoId
 } from 'class-validator';
 
 export class UpdatePublicacionDto {
   @IsOptional()
   @IsString()
-  @MaxLength(80)
+  id_vendedor?: string;
+
+  @IsOptional()
+  @IsString()
+  id_producto?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(5)
+  @MaxLength(100)
   titulo?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @MinLength(10)
+  @MaxLength(1000)
   descripcion?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  precio?: number;
-
-  @IsOptional()
   @IsMongoId()
-  categoria?: string;
-
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(6)
-  @IsMongoId({ each: true })
-  imagenes?: string[];
+  categoriaId?: string;
 
   @IsOptional()
   @IsString()
   estado?: string;
-
-  @IsOptional()
-  @IsString()
-  comentarioModerador?: string;
 }

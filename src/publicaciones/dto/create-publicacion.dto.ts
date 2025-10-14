@@ -2,44 +2,62 @@ import {
   IsString,
   IsNotEmpty,
   MaxLength,
-  IsNumber,
-  Min,
+  MinLength,
   IsArray,
-  ArrayMinSize,
-  ArrayMaxSize,
   IsMongoId,
-  IsOptional
+  IsOptional,
+  ValidateNested,
+  IsInt,
+  Min
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class MultimediaDto {
+  @IsString()
+  @IsNotEmpty()
+  url: string;
+
+  @IsInt()
+  @Min(0)
+  orden: number;
+
+  @IsString()
+  @IsOptional()
+  tipo?: string; // "imagen" o "video"
+}
 
 export class CreatePublicacionDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(80)
+  id_vendedor: string;
+
+  @IsString()
+  @IsOptional()
+  id_producto?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(5)
+  @MaxLength(100)
   titulo: string;
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(500)
+  @MinLength(10)
+  @MaxLength(1000)
   descripcion: string;
 
-  @IsNumber()
-  @Min(0)
-  precio: number;
-
   @IsMongoId()
-  categoria: string;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(6)
-  @IsMongoId({ each: true })
-  imagenes: string[];
-
-  @IsString()
   @IsNotEmpty()
-  vendedorId: string;
+  categoriaId: string;
 
   @IsOptional()
   @IsString()
-  estado?: string; // Se puede omitir, por defecto será "revision"
+  estado?: string; // Por defecto será "EN REVISION"
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => MultimediaDto)
+  multimedia?: MultimediaDto[];
 }

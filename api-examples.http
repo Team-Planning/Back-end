@@ -1,0 +1,202 @@
+### API Examples - Sistema de Publicaciones
+### Usar con extensión REST Client de VS Code
+
+@baseUrl = http://localhost:3000/api
+@contentType = application/json
+
+#############################
+# CATEGORÍAS
+#############################
+
+### 1. Listar todas las categorías
+GET {{baseUrl}}/categorias
+Content-Type: {{contentType}}
+
+### 2. Listar solo categorías activas
+GET {{baseUrl}}/categorias/activas
+Content-Type: {{contentType}}
+
+### 3. Obtener categoría por ID (reemplazar con ID real)
+GET {{baseUrl}}/categorias/67018e8b5c4f6a001e123456
+Content-Type: {{contentType}}
+
+### 4. Crear nueva categoría
+POST {{baseUrl}}/categorias
+Content-Type: {{contentType}}
+
+{
+  "nombre": "Arte y Manualidades",
+  "descripcion": "Artículos de arte, pintura y manualidades",
+  "icono": "palette",
+  "activa": true
+}
+
+### 5. Actualizar categoría (reemplazar con ID real)
+PUT {{baseUrl}}/categorias/67018e8b5c4f6a001e123456
+Content-Type: {{contentType}}
+
+{
+  "descripcion": "Descripción actualizada de la categoría",
+  "activa": true
+}
+
+### 6. Activar categoría (reemplazar con ID real)
+PATCH {{baseUrl}}/categorias/67018e8b5c4f6a001e123456/activar
+Content-Type: {{contentType}}
+
+### 7. Desactivar categoría (reemplazar con ID real)
+PATCH {{baseUrl}}/categorias/67018e8b5c4f6a001e123456/desactivar
+Content-Type: {{contentType}}
+
+### 8. Eliminar categoría (reemplazar con ID real)
+DELETE {{baseUrl}}/categorias/67018e8b5c4f6a001e123456
+Content-Type: {{contentType}}
+
+#############################
+# PUBLICACIONES
+#############################
+
+### 9. Listar todas las publicaciones
+GET {{baseUrl}}/publicaciones
+Content-Type: {{contentType}}
+
+### 10. Obtener publicación por ID (reemplazar con ID real)
+GET {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012
+Content-Type: {{contentType}}
+
+### 11. Crear nueva publicación (reemplazar categoriaId con ID real)
+POST {{baseUrl}}/publicaciones
+Content-Type: {{contentType}}
+
+{
+  "id_vendedor": "vendedor_12345",
+  "id_producto": "prod_67890",
+  "titulo": "iPhone 15 Pro Max 256GB - Como nuevo",
+  "descripcion": "Vendo iPhone 15 Pro Max en excelente estado, apenas 2 meses de uso. Incluye cargador original, cable y caja. Sin rayones ni golpes. Batería al 100%. Acepto pruebas.",
+  "categoriaId": "67018e8b5c4f6a001e123456",
+  "multimedia": [
+    {
+      "url": "https://ejemplo.com/imagenes/iphone-frontal.jpg",
+      "orden": 0,
+      "tipo": "imagen"
+    },
+    {
+      "url": "https://ejemplo.com/imagenes/iphone-trasera.jpg",
+      "orden": 1,
+      "tipo": "imagen"
+    }
+  ]
+}
+
+### 12. Crear publicación sin multimedia
+POST {{baseUrl}}/publicaciones
+Content-Type: {{contentType}}
+
+{
+  "id_vendedor": "vendedor_54321",
+  "titulo": "Bicicleta de montaña Specialized",
+  "descripcion": "Bicicleta de montaña en muy buen estado, poco uso. Frenos de disco, 21 velocidades.",
+  "categoriaId": "67018e8b5c4f6a001e123456"
+}
+
+### 13. Actualizar publicación (reemplazar con ID real)
+PUT {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012
+Content-Type: {{contentType}}
+
+{
+  "titulo": "iPhone 15 Pro Max 256GB - REBAJADO",
+  "descripcion": "Descripción actualizada con nuevo precio",
+  "estado": "ACTIVO"
+}
+
+### 14. Cambiar estado de publicación (reemplazar con ID real)
+PATCH {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/estado
+Content-Type: {{contentType}}
+
+{
+  "estado": "ACTIVO"
+}
+
+### Estados disponibles:
+# - EN REVISION (default)
+# - BORRADOR
+# - ACTIVO
+# - PAUSADO
+# - VENDIDO
+# - RECHAZADO
+
+### 15. Eliminar publicación (reemplazar con ID real)
+DELETE {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012
+Content-Type: {{contentType}}
+
+#############################
+# MULTIMEDIA
+#############################
+
+### 16. Agregar multimedia a publicación existente (reemplazar con ID real)
+POST {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/multimedia
+Content-Type: {{contentType}}
+
+{
+  "url": "https://ejemplo.com/imagenes/nueva-imagen.jpg",
+  "orden": 2,
+  "tipo": "imagen"
+}
+
+### 17. Agregar video a publicación
+POST {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/multimedia
+Content-Type: {{contentType}}
+
+{
+  "url": "https://ejemplo.com/videos/demo-producto.mp4",
+  "orden": 3,
+  "tipo": "video"
+}
+
+### 18. Eliminar multimedia (reemplazar con ID de multimedia)
+DELETE {{baseUrl}}/publicaciones/multimedia/67018e8b5c4f6a001e999999
+Content-Type: {{contentType}}
+
+#############################
+# MODERACIÓN
+#############################
+
+### 19. Aprobar publicación
+POST {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/moderacion
+Content-Type: {{contentType}}
+
+{
+  "id_moderador": "mod_12345",
+  "accion": "APROBADO",
+  "comentario": "Publicación aprobada. Cumple con todas las políticas."
+}
+
+### 20. Rechazar publicación
+POST {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/moderacion
+Content-Type: {{contentType}}
+
+{
+  "id_moderador": "mod_12345",
+  "accion": "RECHAZADO",
+  "comentario": "Publicación rechazada: las imágenes no son claras y la descripción es insuficiente."
+}
+
+### 21. Moderación automática (sin moderador)
+POST {{baseUrl}}/publicaciones/67018e8b5c4f6a001e789012/moderacion
+Content-Type: {{contentType}}
+
+{
+  "accion": "RECHAZADO",
+  "comentario": "Contenido detectado como inapropiado por sistema automático."
+}
+
+#############################
+# NOTAS PARA EL EQUIPO
+#############################
+
+# 1. Reemplazar los IDs de ejemplo con IDs reales obtenidos de las respuestas
+# 2. El servidor debe estar corriendo en puerto 3000 (pnpm start:dev)
+# 3. Todos los endpoints devuelven JSON
+# 4. Las fechas están en formato ISO 8601
+# 5. Los ObjectId de MongoDB tienen 24 caracteres hexadecimales
+# 6. Para instalar REST Client: buscar "REST Client" en extensiones de VS Code

@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Categoría
+model Categoria {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  nombre        String         @unique
+  descripcion   String?
+  icono         String?        // URL o nombre del icono
+  activa        Boolean        @default(true)
+  fechaCreacion DateTime       @default(now())
+  publicaciones Publicacion[]
+
+  @@map("categorias")
+}
+
+// Modelo de Publicación
+model Publicacion {
+  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
+  id_vendedor         String      // ID del vendedor (referencia externa a otro microservicio)
+  id_producto         String?     // ID del producto (si aplica)
+  titulo              String
+  descripcion         String
+  categoria           Categoria   @relation(fields: [categoriaId], references: [id])
+  categoriaId         String      @db.ObjectId
+  estado              String      @default("EN REVISION") // Estados: "BORRADOR", "EN REVISION", "ACTIVO", "PAUSADO", "VENDIDO", "RECHAZADO"
+  fechaCreacion       DateTime    @default(now())
+  fechaModificacion   DateTime    @updatedAt
+  multimedia          Multimedia[]
+  moderaciones        Moderacion[]
+
+  @@map("publicaciones")
+}
+
+// Modelo de Multimedia (imágenes/videos de la publicación)
+model Multimedia {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  publicacion     Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+  id_publicacion  String      @db.ObjectId
+  url             String      // Link de la imagen/video guardado en repositorio
+  orden           Int         @default(0) // Orden numérico de la imagen
+  tipo            String      @default("imagen") // "imagen" o "video"
+
+  @@map("multimedia")
+}
+
+// Modelo de Moderación
+model Moderacion {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  publicacion     Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+  id_publicacion  String      @db.ObjectId
+  id_moderador    String?     // ID del administrador (moderador) - puede ser null si es automático
+  accion          String      // "APROBADO" o "RECHAZADO"
+  comentario      String      // Corresponde al error que presentó
+  fecha           DateTime    @default(now())
+
+  @@map("moderaciones")
+}

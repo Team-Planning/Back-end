@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { ConfigModule } from '@nestjs/config';
+// import { AuthModule } from './auth/auth.module';
+// import { UsersModule } from './users/users.module';
 import { PublicacionesModule } from './publicaciones/publicaciones.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { CategoriasModule } from './categorias/categorias.module';
 
 @Module({
   imports: [
@@ -12,19 +13,15 @@ import { PublicacionesModule } from './publicaciones/publicaciones.module';
       isGlobal: true, // Disponible en toda la aplicación
     }),
     
-    // Conexión a MongoDB
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
-    }),
+    // Prisma Module (Global)
+    PrismaModule,
     
     // Módulos de la aplicación
-    AuthModule,
-    UsersModule,
+    // AuthModule,  // Comentado - No es responsabilidad de este microservicio
+    // UsersModule, // Comentado - No es responsabilidad de este microservicio
     PublicacionesModule,
+    CategoriasModule,
   ],
 })
 export class AppModule {}
+
