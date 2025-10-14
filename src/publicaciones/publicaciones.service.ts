@@ -49,6 +49,9 @@ export class PublicacionesService {
 
   async listarTodas() {
     return this.prisma.publicacion.findMany({
+      where: {
+        estado: { not: 'eliminada' },
+      },
       include: {
         categoria: true,
         multimedia: {
