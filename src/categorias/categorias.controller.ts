@@ -6,20 +6,31 @@ import {
   Delete,
   Param,
   Body,
+<<<<<<< HEAD
   Patch,
   HttpCode,
   HttpStatus,
+=======
+  Patch
+>>>>>>> 087c206160ac6d8e3482efcdbc4f7b9a2ea473fa
 } from '@nestjs/common';
 import { CategoriasService } from './categorias.service';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 
+<<<<<<< HEAD
 @Controller('categorias')
+=======
+@Controller('Categorias')
+>>>>>>> 087c206160ac6d8e3482efcdbc4f7b9a2ea473fa
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Post()
+<<<<<<< HEAD
   @HttpCode(HttpStatus.CREATED)
+=======
+>>>>>>> 087c206160ac6d8e3482efcdbc4f7b9a2ea473fa
   async crear(@Body() dto: CreateCategoriaDto) {
     return this.categoriasService.crear(dto);
   }
@@ -29,11 +40,14 @@ export class CategoriasController {
     return this.categoriasService.listarTodas();
   }
 
+<<<<<<< HEAD
   @Get('activas')
   async listarActivas() {
     return this.categoriasService.listarActivas();
   }
 
+=======
+>>>>>>> 087c206160ac6d8e3482efcdbc4f7b9a2ea473fa
   @Get(':id')
   async obtenerPorId(@Param('id') id: string) {
     return this.categoriasService.obtenerPorId(id);
@@ -45,6 +59,7 @@ export class CategoriasController {
   }
 
   @Delete(':id')
+<<<<<<< HEAD
   @HttpCode(HttpStatus.OK)
   async eliminar(@Param('id') id: string) {
     return this.categoriasService.eliminar(id);
@@ -59,4 +74,9 @@ export class CategoriasController {
   async desactivar(@Param('id') id: string) {
     return this.categoriasService.activarDesactivar(id, false);
   }
+=======
+  async eliminar(@Param('id') id: string) {
+    return this.categoriasService.eliminar(id);
+  }
+>>>>>>> 087c206160ac6d8e3482efcdbc4f7b9a2ea473fa
 }

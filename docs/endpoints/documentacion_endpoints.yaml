@@ -1,0 +1,334 @@
+openapi: 3.0.3
+info:
+  title: PulgaShop - Microservicio de Publicaciones y Multimedia
+  version: 1.0.3
+  description: >
+    API del microservicio de Publicaciones y Multimedia para el proyecto PulgaShop.  
+    Este servicio gestiona la creación, edición, eliminación, obtención y moderación de publicaciones.
+    Datos como precio, stock, reseñas y datos del vendedor se obtienen dinámicamente desde otros microservicios.
+
+servers:
+  - url: mongodb+srv://DanielBelozo:XRNc6f7PVTLNEFmp@pulgashoppost.7txazxa.mongodb.net/?retryWrites=true&w=majority&appName=PulgaShopPost
+    description: Servidor de publicaciones
+  - url: 
+    description: Servidor de multimedia
+
+paths:
+  /publicaciones:
+    post:
+      summary: Crear una nueva publicación
+      description: >
+        Permite a un usuario autenticado crear una publicación asociada a un producto.  
+        El registro queda inicialmente en estado EN_REVISION y se notifica al equipo de moderación.  
+        Los archivos multimedia (imágenes o videos) se envían como binarios y son almacenados en el servicio de multimedia.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [titulo, descripcion, precio, stock, multimedia]
+              properties:
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+                id_producto:
+                  type: string
+                id_vendedor:
+                  type: string
+                precio:
+                  type: number
+                  format: float
+                  description: Precio del producto, necesario para enviar al microservicio de Vendedores e Inventario
+                stock:
+                  type: integer
+                  format: int32
+                  description: Stock del producto, necesario para enviar al microservicio de Vendedores e Inventario
+                multimedia:
+                  type: array
+                  maxItems: 6
+                  items:
+                    type: object
+                    required: [tipo, archivo]
+                    properties:
+                      tipo:
+                        type: string
+                        enum: [IMAGEN, VIDEO]
+                      archivo:
+                        type: string
+                        format: binary
+      responses:
+        "201":
+          description: Publicación creada exitosamente, en estado EN_REVISION.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_publicacion:
+                    type: string
+                  estado:
+                    type: string
+                    enum: [EN_REVISION, ACTIVA, RECHAZADA, ELIMINADA]
+                  mensaje:
+                    type: string
+        "400":
+          description: Datos inválidos o incompletos.
+        "401":
+          description: Usuario no autenticado.
+        "500":
+          description: Error interno al crear la publicación.
+
+  /publicaciones/{id_publicacion}:
+    get:
+      summary: Obtener detalles de una publicación
+      parameters:
+        - in: path
+          name: id_publicacion
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >
+            Detalles completos de la publicación.  
+            Incluye información propia del servicio de publicaciones, más datos enriquecidos desde otros servicios.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_publicacion: { type: string }
+                  titulo: { type: string }
+                  descripcion: { type: string }
+                  id_producto: { type: string }
+                  id_vendedor: { type: string }
+                  multimedia:
+                    type: array
+                    maxItems: 6
+                    items:
+                      type: object
+                      properties:
+                        tipo:
+                          type: string
+                          enum: [IMAGEN, VIDEO]
+                        url:
+                          type: string
+                          format: uri
+                  precio:
+                    type: number
+                    format: float
+                    description: Precio obtenido desde el microservicio de Vendedores e Inventario
+                  stock:
+                    type: integer
+                    format: int32
+                    description: Stock obtenido desde el microservicio de Vendedores e Inventario
+                  vendedor:
+                    type: object
+                    description: Datos obtenidos desde el microservicio de Autenticación y Perfiles
+                    properties:
+                      nombre: { type: string }
+                  reseñas:
+                    type: array
+                    description: Datos obtenidos desde el microservicio de Reseñas y Reputación
+                    items:
+                      type: object
+                      properties:
+                        usuario: { type: string }
+                        comentario: { type: string }
+                        calificacion: { type: integer, format: int32 }
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al obtener la publicación
+
+    put:
+      summary: Editar una publicación
+      parameters:
+        - in: path
+          name: id_publicacion
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+                agregarMultimedia:
+                  type: array
+                  maxItems: 6
+                  items:
+                    type: object
+                    required: [tipo, archivo]
+                    properties:
+                      tipo:
+                        type: string
+                        enum: [IMAGEN, VIDEO]
+                      archivo:
+                        type: string
+                        format: binary
+                eliminarMultimedia:
+                  type: array
+                  items:
+                    type: string
+                reordenarMultimedia:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Publicación actualizada exitosamente
+        "400":
+          description: Datos inválidos
+        "401":
+          description: Usuario sin permisos
+        "500":
+          description: Error al actualizar
+
+    delete:
+      summary: Eliminar publicación
+      description: >
+        Marca la publicación como eliminada, deshabilita el producto en inventario a través del microservicio correspondiente,  
+        y notifica a los clientes que lo tengan en carrito.
+      parameters:
+        - in: path
+          name: id_publicacion
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Publicación eliminada exitosamente
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al eliminar publicación
+
+  /publicaciones/vistas-previas:
+    get:
+      summary: Obtener vistas previas de publicaciones
+      description: >
+        Retorna una lista de publicaciones activas con stock disponible.  
+        Combina datos de inventario (precio, stock) y la imagen principal desde el servicio de Multimedia.  
+        Se pueden aplicar filtros opcionales.
+      parameters:
+        - in: query
+          name: nombre
+          schema: { type: string }
+        - in: query
+          name: categoria
+          schema: { type: string }
+        - in: query
+          name: precio_min
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: precio_max
+          schema:
+            type: number
+            format: float
+        - in: query
+          name: id_vendedor
+          schema: { type: string }
+        - in: query
+          name: pagina
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - in: query
+          name: limite
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        "200":
+          description: >
+            Lista de publicaciones activas con stock disponible.  
+            La respuesta puede ser una lista vacía si no hay coincidencias con los filtros.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_publicacion: { type: string }
+                    titulo: { type: string }
+                    precio:
+                      type: number
+                      format: float
+                      description: Obtenido desde el microservicio de Inventario
+                    stock:
+                      type: integer
+                      format: int32
+                      description: Obtenido desde el microservicio de Inventario
+                    imagenPrincipal:
+                      type: string
+                      format: uri
+                      description: Imagen principal desde el microservicio de Multimedia
+        "400":
+          description: Filtros inválidos o parámetros incorrectos.
+        "404":
+          description: No se encontraron publicaciones que coincidan con los filtros.
+        "500":
+          description: Error interno al obtener publicaciones o datos relacionados.
+
+  /publicaciones/moderacion:
+    get:
+      summary: Obtener publicaciones en revisión
+      responses:
+        "200":
+          description: Lista de publicaciones pendientes de revisión
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id_publicacion: { type: string }
+                    titulo: { type: string }
+                    imagenPrincipal:
+                      type: string
+                      format: uri
+        "500":
+          description: Error al obtener publicaciones
+
+  /publicaciones/moderacion/{id_publicacion}:
+    post:
+      summary: Aprobar o rechazar publicación
+      parameters:
+        - in: path
+          name: id_publicacion
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [accion]
+              properties:
+                accion:
+                  type: string
+                  enum: [APROBAR, RECHAZAR]
+      responses:
+        "200":
+          description: Estado de publicación actualizado
+        "400":
+          description: Acción inválida
+        "404":
+          description: Publicación no encontrada
+        "500":
+          description: Error al cambiar estado
