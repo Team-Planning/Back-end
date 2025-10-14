@@ -43,12 +43,13 @@ model Publicacion {
 
 // Modelo de Multimedia (imágenes/videos de la publicación)
 model Multimedia {
-  id              String      @id @default(auto()) @map("_id") @db.ObjectId
-  publicacion     Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
-  id_publicacion  String      @db.ObjectId
-  url             String      // Link de la imagen/video guardado en repositorio
-  orden           Int         @default(0) // Orden numérico de la imagen
-  tipo            String      @default("imagen") // "imagen" o "video"
+  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
+  publicacion         Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+  id_publicacion      String      @db.ObjectId
+  url                 String      // Link de la imagen/video guardado en repositorio
+  cloudinaryPublicId  String?     // Public ID de Cloudinary para poder eliminar la imagen
+  orden               Int         @default(0) // Orden numérico de la imagen
+  tipo                String      @default("imagen") // "imagen" o "video"
 
   @@map("multimedia")
 }

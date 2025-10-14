@@ -1,0 +1,469 @@
+// ========================================
+// EJEMPLO: Integración de Cloudinary con Publicaciones
+// ========================================
+// Este archivo muestra cómo integrar el upload de imágenes
+// con el módulo de publicaciones existente
+
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+
+@Injectable()
+export class PublicacionesServiceConImagenes {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
+
+  /**
+   * EJEMPLO 1: Crear publicación con imágenes
+   * Sube las imágenes a Cloudinary y crea los registros de multimedia
+   */
+  async crearPublicacionConImagenes(
+    dto: {
+      titulo: string;
+      descripcion: string;
+      precio: number;
+      categoriaId: string;
+      ubicacion?: string;
+    },
+    imagenes: Express.Multer.File[],
+  ) {
+    // 1. Subir todas las imágenes a Cloudinary
+    const imagenesSubidas = await this.cloudinaryService.uploadMultipleImages(
+      imagenes,
+      'pulgashop/publicaciones', // carpeta personalizada
+    );
+
+    // 2. Crear la publicación
+    const publicacion = await this.prisma.publicacion.create({
+      data: {
+        titulo: dto.titulo,
+        descripcion: dto.descripcion,
+        precio: dto.precio,
+        categoriaId: dto.categoriaId,
+        ubicacion: dto.ubicacion,
+        estado: 'PENDIENTE',
+      },
+    });
+
+    // 3. Crear registros de multimedia vinculados a la publicación
+    const multimediaPromises = imagenesSubidas.map((img, index) =>
+      this.prisma.multimedia.create({
+        data: {
+          publicacionId: publicacion.id,
+          tipo: 'IMAGEN',
+          url: img.url,
+          cloudinaryPublicId: img.publicId, // Guardar para poder eliminar después
+          orden: index + 1,
+        },
+      }),
+    );
+
+    const multimedia = await Promise.all(multimediaPromises);
+
+    // 4. Retornar publicación con multimedia
+    return {
+      ...publicacion,
+      multimedia,
+    };
+  }
+
+  /**
+   * EJEMPLO 2: Añadir imágenes a una publicación existente
+   */
+  async agregarImagenesAPublicacion(
+    publicacionId: string,
+    imagenes: Express.Multer.File[],
+  ) {
+    // Verificar que la publicación existe
+    const publicacion = await this.prisma.publicacion.findUnique({
+      where: { id: publicacionId },
+    });
+
+    if (!publicacion) {
+      throw new Error('Publicación no encontrada');
+    }
+
+    // Subir imágenes a Cloudinary
+    const imagenesSubidas = await this.cloudinaryService.uploadMultipleImages(imagenes);
+
+    // Obtener el orden actual más alto
+    const ultimaMultimedia = await this.prisma.multimedia.findFirst({
+      where: { publicacionId },
+      orderBy: { orden: 'desc' },
+    });
+
+    const ordenInicial = ultimaMultimedia ? ultimaMultimedia.orden + 1 : 1;
+
+    // Crear registros de multimedia
+    const multimediaPromises = imagenesSubidas.map((img, index) =>
+      this.prisma.multimedia.create({
+        data: {
+          publicacionId,
+          tipo: 'IMAGEN',
+          url: img.url,
+          cloudinaryPublicId: img.publicId,
+          orden: ordenInicial + index,
+        },
+      }),
+    );
+
+    return Promise.all(multimediaPromises);
+  }
+
+  /**
+   * EJEMPLO 3: Eliminar publicación y sus imágenes de Cloudinary
+   */
+  async eliminarPublicacionConImagenes(publicacionId: string) {
+    // 1. Obtener todas las imágenes de la publicación
+    const multimedia = await this.prisma.multimedia.findMany({
+      where: { publicacionId },
+    });
+
+    // 2. Extraer los publicIds de Cloudinary
+    const publicIds = multimedia
+      .filter((m) => m.cloudinaryPublicId)
+      .map((m) => m.cloudinaryPublicId);
+
+    // 3. Eliminar imágenes de Cloudinary
+    if (publicIds.length > 0) {
+      await this.cloudinaryService.deleteMultipleImages(publicIds);
+    }
+
+    // 4. Eliminar publicación de la base de datos (cascade eliminará multimedia)
+    await this.prisma.publicacion.delete({
+      where: { id: publicacionId },
+    });
+
+    return {
+      mensaje: 'Publicación e imágenes eliminadas exitosamente',
+      imagenesEliminadas: publicIds.length,
+    };
+  }
+
+  /**
+   * EJEMPLO 4: Eliminar una imagen específica de una publicación
+   */
+  async eliminarImagenDePublicacion(multimediaId: string) {
+    // 1. Obtener el registro de multimedia
+    const multimedia = await this.prisma.multimedia.findUnique({
+      where: { id: multimediaId },
+    });
+
+    if (!multimedia) {
+      throw new Error('Imagen no encontrada');
+    }
+
+    // 2. Eliminar de Cloudinary si tiene publicId
+    if (multimedia.cloudinaryPublicId) {
+      await this.cloudinaryService.deleteImage(multimedia.cloudinaryPublicId);
+    }
+
+    // 3. Eliminar registro de la base de datos
+    await this.prisma.multimedia.delete({
+      where: { id: multimediaId },
+    });
+
+    return {
+      mensaje: 'Imagen eliminada exitosamente',
+    };
+  }
+
+  /**
+   * EJEMPLO 5: Actualizar imagen (reemplazar)
+   */
+  async actualizarImagen(
+    multimediaId: string,
+    nuevaImagen: Express.Multer.File,
+  ) {
+    // 1. Obtener el registro actual
+    const multimedia = await this.prisma.multimedia.findUnique({
+      where: { id: multimediaId },
+    });
+
+    if (!multimedia) {
+      throw new Error('Imagen no encontrada');
+    }
+
+    // 2. Subir nueva imagen a Cloudinary
+    const imagenSubida = await this.cloudinaryService.uploadImage(nuevaImagen);
+
+    // 3. Eliminar imagen antigua de Cloudinary
+    if (multimedia.cloudinaryPublicId) {
+      await this.cloudinaryService.deleteImage(multimedia.cloudinaryPublicId);
+    }
+
+    // 4. Actualizar registro en la base de datos
+    return this.prisma.multimedia.update({
+      where: { id: multimediaId },
+      data: {
+        url: imagenSubida.url,
+        cloudinaryPublicId: imagenSubida.publicId,
+      },
+    });
+  }
+
+  /**
+   * EJEMPLO 6: Obtener publicación con thumbnails optimizados
+   */
+  async obtenerPublicacionConThumbnails(publicacionId: string) {
+    const publicacion = await this.prisma.publicacion.findUnique({
+      where: { id: publicacionId },
+      include: {
+        multimedia: {
+          orderBy: { orden: 'asc' },
+        },
+        categoria: true,
+      },
+    });
+
+    if (!publicacion) {
+      throw new Error('Publicación no encontrada');
+    }
+
+    // Agregar URLs de thumbnails para cada imagen
+    const multimediaConThumbnails = publicacion.multimedia.map((m) => {
+      if (m.cloudinaryPublicId) {
+        return {
+          ...m,
+          thumbnails: this.cloudinaryService.getThumbnailUrls(m.cloudinaryPublicId),
+        };
+      }
+      return m;
+    });
+
+    return {
+      ...publicacion,
+      multimedia: multimediaConThumbnails,
+    };
+  }
+}
+
+// ========================================
+// EJEMPLO DE CONTROLLER
+// ========================================
+
+import {
+  Controller,
+  Post,
+  Delete,
+  Get,
+  Put,
+  Body,
+  Param,
+  UseInterceptors,
+  UploadedFiles,
+  UploadedFile,
+} from '@nestjs/common';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
+
+@Controller('publicaciones-imagenes')
+export class PublicacionesImagenesController {
+  constructor(
+    private readonly publicacionesService: PublicacionesServiceConImagenes,
+  ) {}
+
+  /**
+   * POST /api/publicaciones-imagenes
+   * Crear publicación con imágenes
+   */
+  @Post()
+  @UseInterceptors(FilesInterceptor('imagenes', 10))
+  async crear(
+    @Body() dto: any,
+    @UploadedFiles() imagenes: Express.Multer.File[],
+  ) {
+    return this.publicacionesService.crearPublicacionConImagenes(
+      {
+        titulo: dto.titulo,
+        descripcion: dto.descripcion,
+        precio: parseFloat(dto.precio),
+        categoriaId: dto.categoriaId,
+        ubicacion: dto.ubicacion,
+      },
+      imagenes,
+    );
+  }
+
+  /**
+   * POST /api/publicaciones-imagenes/:id/imagenes
+   * Añadir imágenes a publicación existente
+   */
+  @Post(':id/imagenes')
+  @UseInterceptors(FilesInterceptor('imagenes', 10))
+  async agregarImagenes(
+    @Param('id') id: string,
+    @UploadedFiles() imagenes: Express.Multer.File[],
+  ) {
+    return this.publicacionesService.agregarImagenesAPublicacion(id, imagenes);
+  }
+
+  /**
+   * DELETE /api/publicaciones-imagenes/:id
+   * Eliminar publicación con todas sus imágenes
+   */
+  @Delete(':id')
+  async eliminar(@Param('id') id: string) {
+    return this.publicacionesService.eliminarPublicacionConImagenes(id);
+  }
+
+  /**
+   * DELETE /api/publicaciones-imagenes/imagen/:multimediaId
+   * Eliminar una imagen específica
+   */
+  @Delete('imagen/:multimediaId')
+  async eliminarImagen(@Param('multimediaId') multimediaId: string) {
+    return this.publicacionesService.eliminarImagenDePublicacion(multimediaId);
+  }
+
+  /**
+   * PUT /api/publicaciones-imagenes/imagen/:multimediaId
+   * Actualizar/reemplazar una imagen
+   */
+  @Put('imagen/:multimediaId')
+  @UseInterceptors(FileInterceptor('imagen'))
+  async actualizarImagen(
+    @Param('multimediaId') multimediaId: string,
+    @UploadedFile() imagen: Express.Multer.File,
+  ) {
+    return this.publicacionesService.actualizarImagen(multimediaId, imagen);
+  }
+
+  /**
+   * GET /api/publicaciones-imagenes/:id/thumbnails
+   * Obtener publicación con thumbnails
+   */
+  @Get(':id/thumbnails')
+  async obtenerConThumbnails(@Param('id') id: string) {
+    return this.publicacionesService.obtenerPublicacionConThumbnails(id);
+  }
+}
+
+// ========================================
+// EJEMPLO DE USO DESDE FRONTEND (React)
+// ========================================
+
+/*
+// upload.service.ts
+import axios from 'axios';
+
+const API_URL = 'http://localhost:3000/api';
+
+export const crearPublicacionConImagenes = async (data: {
+  titulo: string;
+  descripcion: string;
+  precio: number;
+  categoriaId: string;
+  ubicacion?: string;
+  imagenes: File[];
+}) => {
+  const formData = new FormData();
+  
+  // Agregar campos de texto
+  formData.append('titulo', data.titulo);
+  formData.append('descripcion', data.descripcion);
+  formData.append('precio', data.precio.toString());
+  formData.append('categoriaId', data.categoriaId);
+  if (data.ubicacion) {
+    formData.append('ubicacion', data.ubicacion);
+  }
+  
+  // Agregar imágenes
+  data.imagenes.forEach(imagen => {
+    formData.append('imagenes', imagen);
+  });
+  
+  const response = await axios.post(
+    `${API_URL}/publicaciones-imagenes`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  
+  return response.data;
+};
+
+// Componente de ejemplo
+const CreatePublicacionWithImages = () => {
+  const [formData, setFormData] = useState({
+    titulo: '',
+    descripcion: '',
+    precio: 0,
+    categoriaId: '',
+    ubicacion: '',
+  });
+  const [imagenes, setImagenes] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setImagenes(files);
+      
+      // Crear previsualizaciones
+      const previewUrls = files.map(file => URL.createObjectURL(file));
+      setPreviews(previewUrls);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const result = await crearPublicacionConImagenes({
+        ...formData,
+        imagenes,
+      });
+      
+      console.log('Publicación creada:', result);
+      alert('Publicación creada exitosamente!');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al crear publicación');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Título"
+        value={formData.titulo}
+        onChange={(e) => setFormData({...formData, titulo: e.target.value})}
+      />
+      
+      <textarea
+        placeholder="Descripción"
+        value={formData.descripcion}
+        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
+      />
+      
+      <input
+        type="number"
+        placeholder="Precio"
+        value={formData.precio}
+        onChange={(e) => setFormData({...formData, precio: parseFloat(e.target.value)})}
+      />
+      
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleImageChange}
+      />
+      
+      <div className="previews">
+        {previews.map((preview, index) => (
+          <img key={index} src={preview} alt={`Preview ${index}`} style={{width: 100}} />
+        ))}
+      </div>
+      
+      <button type="submit">Crear Publicación</button>
+    </form>
+  );
+};
+*/

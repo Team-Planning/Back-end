@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PublicacionesModule } from './publicaciones/publicaciones.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { CategoriasModule } from './categorias/categorias.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -15,6 +16,9 @@ import { CategoriasModule } from './categorias/categorias.module';
     
     // Prisma Module (Global)
     PrismaModule,
+    
+    // Cloudinary Module (Global para upload de imágenes)
+    CloudinaryModule,
     
     // Módulos de la aplicación
     // AuthModule,  // Comentado - No es responsabilidad de este microservicio
