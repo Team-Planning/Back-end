@@ -25,7 +25,7 @@ export class PublicacionesService {
         titulo: dto.titulo,
         descripcion: dto.descripcion,
         categoriaId: dto.categoriaId,
-        estado: dto.estado || 'en revision',
+        estado: dto.estado || 'EN REVISIÓN',
         multimedia: dto.multimedia
           ? {
               create: dto.multimedia.map((m) => ({
@@ -50,7 +50,7 @@ export class PublicacionesService {
   async listarTodas() {
     return this.prisma.publicacion.findMany({
       where: {
-        estado: { not: 'eliminada' },
+        estado: { not: 'ELIMINADO' },
       },
       include: {
         categoria: true,
@@ -126,14 +126,14 @@ export class PublicacionesService {
     const publicacion = await this.obtenerPorId(id);
 
     // Verificar que no esté ya eliminada
-    if (publicacion.estado === 'eliminada') {
+    if (publicacion.estado === 'ELIMINADO') {
       throw new BadRequestException('La publicación ya está eliminada');
     }
 
     // Actualizar el estado a 'eliminada'
     await this.prisma.publicacion.update({
       where: { id },
-      data: { estado: 'eliminada' }
+      data: { estado: 'ELIMINADO' }
     });
 
     return { mensaje: 'Publicación eliminada exitosamente' };
