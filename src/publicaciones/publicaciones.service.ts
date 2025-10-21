@@ -139,6 +139,18 @@ export class PublicacionesService {
     return { mensaje: 'Publicación eliminada exitosamente' };
   }
 
+  async eliminarForzado(id: string) {
+    // Verificar que la publicación existe
+    const publicacion = await this.obtenerPorId(id);
+
+    // Eliminar publicación forzadamente
+    await this.prisma.publicacion.delete({
+      where: { id }
+    });
+
+    return { mensaje: 'Publicación eliminada completamente' };
+  }
+
   async cambiarEstado(id: string, estado: string) {
     // Verificar que la publicación existe
     await this.obtenerPorId(id);

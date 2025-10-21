@@ -45,6 +45,12 @@ export class PublicacionesController {
     return this.publicacionesService.eliminar(id);
   }
 
+  @Delete('eliminar/:id')
+  @HttpCode(HttpStatus.OK)
+  async eliminarForzado(@Param('id') id: string) {
+    return this.publicacionesService.eliminarForzado(id);
+  }
+
   @Patch(':id/estado')
   async cambiarEstado(
     @Param('id') id: string,
