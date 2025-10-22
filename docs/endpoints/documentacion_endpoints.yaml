@@ -1,334 +1,899 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
   title: PulgaShop - Microservicio de Publicaciones y Multimedia
-  version: 1.0.3
+  version: 1.1.3
   description: >
     API del microservicio de Publicaciones y Multimedia para el proyecto PulgaShop.  
     Este servicio gestiona la creación, edición, eliminación, obtención y moderación de publicaciones.
     Datos como precio, stock, reseñas y datos del vendedor se obtienen dinámicamente desde otros microservicios.
 
 servers:
-  - url: mongodb+srv://DanielBelozo:XRNc6f7PVTLNEFmp@pulgashoppost.7txazxa.mongodb.net/?retryWrites=true&w=majority&appName=PulgaShopPost
-    description: Servidor de publicaciones
-  - url: 
-    description: Servidor de multimedia
+  - url: http://localhost:3000/api
+    description: Servidor de desarrollo
+
+tags:
+  - name: Publicaciones
+    description: Operaciones CRUD de publicaciones
+  - name: Multimedia
+    description: Gestión de multimedia asociada a publicaciones
+  - name: Moderación
+    description: Gestión de moderaciones de publicaciones
 
 paths:
   /publicaciones:
     post:
+      tags:
+        - Publicaciones
       summary: Crear una nueva publicación
-      description: >
-        Permite a un usuario autenticado crear una publicación asociada a un producto.  
-        El registro queda inicialmente en estado EN_REVISION y se notifica al equipo de moderación.  
-        Los archivos multimedia (imágenes o videos) se envían como binarios y son almacenados en el servicio de multimedia.
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [titulo, descripcion, precio, stock, multimedia]
-              properties:
-                titulo:
-                  type: string
-                descripcion:
-                  type: string
-                id_producto:
-                  type: string
-                id_vendedor:
-                  type: string
-                precio:
-                  type: number
-                  format: float
-                  description: Precio del producto, necesario para enviar al microservicio de Vendedores e Inventario
-                stock:
-                  type: integer
-                  format: int32
-                  description: Stock del producto, necesario para enviar al microservicio de Vendedores e Inventario
-                multimedia:
-                  type: array
-                  maxItems: 6
-                  items:
-                    type: object
-                    required: [tipo, archivo]
-                    properties:
-                      tipo:
-                        type: string
-                        enum: [IMAGEN, VIDEO]
-                      archivo:
-                        type: string
-                        format: binary
-      responses:
-        "201":
-          description: Publicación creada exitosamente, en estado EN_REVISION.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id_publicacion:
-                    type: string
-                  estado:
-                    type: string
-                    enum: [EN_REVISION, ACTIVA, RECHAZADA, ELIMINADA]
-                  mensaje:
-                    type: string
-        "400":
-          description: Datos inválidos o incompletos.
-        "401":
-          description: Usuario no autenticado.
-        "500":
-          description: Error interno al crear la publicación.
-
-  /publicaciones/{id_publicacion}:
-    get:
-      summary: Obtener detalles de una publicación
-      parameters:
-        - in: path
-          name: id_publicacion
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: >
-            Detalles completos de la publicación.  
-            Incluye información propia del servicio de publicaciones, más datos enriquecidos desde otros servicios.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id_publicacion: { type: string }
-                  titulo: { type: string }
-                  descripcion: { type: string }
-                  id_producto: { type: string }
-                  id_vendedor: { type: string }
-                  multimedia:
-                    type: array
-                    maxItems: 6
-                    items:
-                      type: object
-                      properties:
-                        tipo:
-                          type: string
-                          enum: [IMAGEN, VIDEO]
-                        url:
-                          type: string
-                          format: uri
-                  precio:
-                    type: number
-                    format: float
-                    description: Precio obtenido desde el microservicio de Vendedores e Inventario
-                  stock:
-                    type: integer
-                    format: int32
-                    description: Stock obtenido desde el microservicio de Vendedores e Inventario
-                  vendedor:
-                    type: object
-                    description: Datos obtenidos desde el microservicio de Autenticación y Perfiles
-                    properties:
-                      nombre: { type: string }
-                  reseñas:
-                    type: array
-                    description: Datos obtenidos desde el microservicio de Reseñas y Reputación
-                    items:
-                      type: object
-                      properties:
-                        usuario: { type: string }
-                        comentario: { type: string }
-                        calificacion: { type: integer, format: int32 }
-        "404":
-          description: Publicación no encontrada
-        "500":
-          description: Error al obtener la publicación
-
-    put:
-      summary: Editar una publicación
-      parameters:
-        - in: path
-          name: id_publicacion
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                titulo:
-                  type: string
-                descripcion:
-                  type: string
-                agregarMultimedia:
-                  type: array
-                  maxItems: 6
-                  items:
-                    type: object
-                    required: [tipo, archivo]
-                    properties:
-                      tipo:
-                        type: string
-                        enum: [IMAGEN, VIDEO]
-                      archivo:
-                        type: string
-                        format: binary
-                eliminarMultimedia:
-                  type: array
-                  items:
-                    type: string
-                reordenarMultimedia:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        "200":
-          description: Publicación actualizada exitosamente
-        "400":
-          description: Datos inválidos
-        "401":
-          description: Usuario sin permisos
-        "500":
-          description: Error al actualizar
-
-    delete:
-      summary: Eliminar publicación
-      description: >
-        Marca la publicación como eliminada, deshabilita el producto en inventario a través del microservicio correspondiente,  
-        y notifica a los clientes que lo tengan en carrito.
-      parameters:
-        - in: path
-          name: id_publicacion
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
-          description: Publicación eliminada exitosamente
-        "404":
-          description: Publicación no encontrada
-        "500":
-          description: Error al eliminar publicación
-
-  /publicaciones/vistas-previas:
-    get:
-      summary: Obtener vistas previas de publicaciones
-      description: >
-        Retorna una lista de publicaciones activas con stock disponible.  
-        Combina datos de inventario (precio, stock) y la imagen principal desde el servicio de Multimedia.  
-        Se pueden aplicar filtros opcionales.
-      parameters:
-        - in: query
-          name: nombre
-          schema: { type: string }
-        - in: query
-          name: categoria
-          schema: { type: string }
-        - in: query
-          name: precio_min
-          schema:
-            type: number
-            format: float
-        - in: query
-          name: precio_max
-          schema:
-            type: number
-            format: float
-        - in: query
-          name: id_vendedor
-          schema: { type: string }
-        - in: query
-          name: pagina
-          schema:
-            type: integer
-            format: int32
-            default: 1
-        - in: query
-          name: limite
-          schema:
-            type: integer
-            format: int32
-            default: 10
-      responses:
-        "200":
-          description: >
-            Lista de publicaciones activas con stock disponible.  
-            La respuesta puede ser una lista vacía si no hay coincidencias con los filtros.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_publicacion: { type: string }
-                    titulo: { type: string }
-                    precio:
-                      type: number
-                      format: float
-                      description: Obtenido desde el microservicio de Inventario
-                    stock:
-                      type: integer
-                      format: int32
-                      description: Obtenido desde el microservicio de Inventario
-                    imagenPrincipal:
-                      type: string
-                      format: uri
-                      description: Imagen principal desde el microservicio de Multimedia
-        "400":
-          description: Filtros inválidos o parámetros incorrectos.
-        "404":
-          description: No se encontraron publicaciones que coincidan con los filtros.
-        "500":
-          description: Error interno al obtener publicaciones o datos relacionados.
-
-  /publicaciones/moderacion:
-    get:
-      summary: Obtener publicaciones en revisión
-      responses:
-        "200":
-          description: Lista de publicaciones pendientes de revisión
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id_publicacion: { type: string }
-                    titulo: { type: string }
-                    imagenPrincipal:
-                      type: string
-                      format: uri
-        "500":
-          description: Error al obtener publicaciones
-
-  /publicaciones/moderacion/{id_publicacion}:
-    post:
-      summary: Aprobar o rechazar publicación
-      parameters:
-        - in: path
-          name: id_publicacion
-          required: true
-          schema: { type: string }
+      description: Crea una publicación con estado inicial "EN REVISION"
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [accion]
+              required:
+                - id_vendedor
+                - titulo
+                - descripcion
+                - categoriaId
+                - precio
+                - stock
               properties:
+                id_vendedor:
+                  type: string
+                  description: ID del vendedor (referencia externa)
+                titulo:
+                  type: string
+                  description: Título de la publicación
+                descripcion:
+                  type: string
+                  description: Descripción detallada
+                precio:
+                  type: integer
+                  minimum: 1
+                  description: Precio en CLP (debe ser mayor a 0)
+                stock:
+                  type: integer
+                  minimum: 1
+                  description: Stock inicial (debe ser mayor a 0)
+                categoriaId:
+                  type: string
+                  description: ID de la categoría (ObjectId de MongoDB)
+                estado:
+                  type: string
+                  enum:
+                    - BORRADOR
+                    - EN REVISION
+                    - ACTIVO
+                    - PAUSADO
+                    - VENDIDO
+                    - RECHAZADO
+                    - ELIMINADO
+                  default: EN REVISION
+                  description: Estado de la publicación
+                multimedia:
+                  type: array
+                  maxItems: 6
+                  description: Máximo 6 fotos/videos por publicación (validado en frontend)
+                  items:
+                    type: object
+                    required:
+                      - url
+                    properties:
+                      url:
+                        type: string
+                        description: URL del archivo en repositorio
+                      cloudinaryPublicId:
+                        type: string
+                        description: Public ID de Cloudinary (opcional)
+                        nullable: true
+                      orden:
+                        type: integer
+                        default: 0
+                        description: Orden de visualización
+                      tipo:
+                        type: string
+                        enum: [imagen, video]
+                        default: imagen
+            example:
+              id_vendedor: "vendedor_001"
+              titulo: "iPhone 13 Pro"
+              descripcion: "Nuevo en caja, 256GB"
+              precio: 899990
+              stock: 5
+              categoriaId: "507f1f77bcf86cd799439011"
+              estado: "EN REVISION"
+              multimedia:
+                - url: "https://res.cloudinary.com/demo/image.jpg"
+                  cloudinaryPublicId: "demo/image"
+                  orden: 1
+                  tipo: "imagen"
+      responses:
+        '201':
+          description: Publicación creada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Publicación creada exitosamente"
+                  id:
+                    type: string
+                    description: ID de la publicación creada
+                  id_producto:
+                    type: string
+                    description: ID del producto generado por el microservicio externo
+        '400':
+          description: Datos inválidos o categoría no existe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                  message:
+                    type: string
+                  error:
+                    type: string
+
+    get:
+      tags:
+        - Publicaciones
+      summary: Listar todas las publicaciones
+      description: Obtiene todas las publicaciones excepto las eliminadas
+      responses:
+        '200':
+          description: Lista de publicaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: ObjectId de MongoDB
+                    id_vendedor:
+                      type: string
+                      description: ID del vendedor (referencia externa)
+                    id_producto:
+                      type: string
+                      nullable: true
+                      description: ID del producto
+                    titulo:
+                      type: string
+                    descripcion:
+                      type: string
+                    categoriaId:
+                      type: string
+                      description: ObjectId de la categoría
+                    estado:
+                      type: string
+                      enum:
+                        - BORRADOR
+                        - EN REVISION
+                        - ACTIVO
+                        - PAUSADO
+                        - VENDIDO
+                        - RECHAZADO
+                        - ELIMINADO
+                    fechaCreacion:
+                      type: string
+                      format: date-time
+                      description: Fecha de creación automática
+                    fechaModificacion:
+                      type: string
+                      format: date-time
+                      description: Fecha de última modificación (updatedAt)
+                    categoria:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: ObjectId de MongoDB
+                        nombre:
+                          type: string
+                          description: Nombre único de la categoría
+                        descripcion:
+                          type: string
+                          nullable: true
+                          description: Descripción opcional
+                        icono:
+                          type: string
+                          nullable: true
+                          description: URL o nombre del icono
+                        activa:
+                          type: boolean
+                          default: true
+                          description: Si la categoría está activa
+                        fechaCreacion:
+                          type: string
+                          format: date-time
+                          description: Fecha de creación
+                    multimedia:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: ObjectId de MongoDB
+                          id_publicacion:
+                            type: string
+                            description: ObjectId de la publicación
+                          url:
+                            type: string
+                            description: Link del archivo en repositorio
+                          cloudinaryPublicId:
+                            type: string
+                            nullable: true
+                            description: Public ID de Cloudinary para eliminación
+                          orden:
+                            type: integer
+                            default: 0
+                            description: Orden numérico de visualización
+                          tipo:
+                            type: string
+                            enum: [imagen, video]
+                            default: imagen
+                            description: Tipo de multimedia
+
+  /publicaciones/{id}:
+    get:
+      tags:
+        - Publicaciones
+      summary: Obtener publicación por ID
+      description: Obtiene los detalles completos de una publicación incluyendo multimedia y moderaciones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID único de la publicación
+          schema:
+            type: string
+          example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Publicación encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ObjectId de MongoDB
+                  id_vendedor:
+                    type: string
+                    description: ID del vendedor (referencia externa)
+                  id_producto:
+                    type: string
+                    nullable: true
+                    description: ID del producto
+                  titulo:
+                    type: string
+                  descripcion:
+                    type: string
+                  categoriaId:
+                    type: string
+                    description: ObjectId de la categoría
+                  estado:
+                    type: string
+                    enum:
+                      - BORRADOR
+                      - EN REVISION
+                      - ACTIVO
+                      - PAUSADO
+                      - VENDIDO
+                      - RECHAZADO
+                      - ELIMINADO
+                  fechaCreacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de creación automática
+                  fechaModificacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de última modificación (updatedAt)
+                  categoria:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: ObjectId de MongoDB
+                      nombre:
+                        type: string
+                        description: Nombre único de la categoría
+                      descripcion:
+                        type: string
+                        nullable: true
+                        description: Descripción opcional
+                      icono:
+                        type: string
+                        nullable: true
+                        description: URL o nombre del icono
+                      activa:
+                        type: boolean
+                        default: true
+                        description: Si la categoría está activa
+                      fechaCreacion:
+                        type: string
+                        format: date-time
+                        description: Fecha de creación
+                  multimedia:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: ObjectId de MongoDB
+                        id_publicacion:
+                          type: string
+                          description: ObjectId de la publicación
+                        url:
+                          type: string
+                          description: Link del archivo en repositorio
+                        cloudinaryPublicId:
+                          type: string
+                          nullable: true
+                          description: Public ID de Cloudinary para eliminación
+                        orden:
+                          type: integer
+                          default: 0
+                          description: Orden numérico de visualización
+                        tipo:
+                          type: string
+                          enum: [imagen, video]
+                          default: imagen
+                          description: Tipo de multimedia
+                  moderaciones:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: ObjectId de MongoDB
+                        id_publicacion:
+                          type: string
+                          description: ObjectId de la publicación
+                        id_moderador:
+                          type: string
+                          nullable: true
+                          description: ID del moderador (null si es automático)
+                        accion:
+                          type: string
+                          enum: [APROBADO, RECHAZADO]
+                          description: Acción de moderación
+                        comentario:
+                          type: string
+                          description: Comentario o error presentado
+                        fecha:
+                          type: string
+                          format: date-time
+                          description: Fecha de la moderación
+        '404':
+          description: Publicación no encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                  message:
+                    type: string
+                  error:
+                    type: string
+
+    put:
+      tags:
+        - Publicaciones
+      summary: Actualizar publicación completa
+      description: Actualiza todos los campos de una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_vendedor:
+                  type: string
+                  description: ID del vendedor
+                id_producto:
+                  type: string
+                  nullable: true
+                  description: ID del producto
+                titulo:
+                  type: string
+                  description: Título de la publicación
+                descripcion:
+                  type: string
+                  description: Descripción detallada
+                categoriaId:
+                  type: string
+                  description: ID de la categoría (ObjectId)
+                estado:
+                  type: string
+                  enum:
+                    - BORRADOR
+                    - EN REVISION
+                    - ACTIVO
+                    - PAUSADO
+                    - VENDIDO
+                    - RECHAZADO
+                    - ELIMINADO
+                  description: Estado de la publicación
+            example:
+              titulo: "iPhone 13 Pro - Actualizado"
+              descripcion: "Incluye cargador y audífonos"
+              categoriaId: "507f1f77bcf86cd799439011"
+              estado: "ACTIVO"
+      responses:
+        '200':
+          description: Publicación actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ObjectId de MongoDB
+                  id_vendedor:
+                    type: string
+                    description: ID del vendedor (referencia externa)
+                  id_producto:
+                    type: string
+                    nullable: true
+                    description: ID del producto
+                  titulo:
+                    type: string
+                  descripcion:
+                    type: string
+                  categoriaId:
+                    type: string
+                    description: ObjectId de la categoría
+                  estado:
+                    type: string
+                    enum:
+                      - BORRADOR
+                      - EN REVISION
+                      - ACTIVO
+                      - PAUSADO
+                      - VENDIDO
+                      - RECHAZADO
+                      - ELIMINADO
+                  fechaCreacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de creación automática
+                  fechaModificacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de última modificación (updatedAt)
+                  categoria:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: ObjectId de MongoDB
+                      nombre:
+                        type: string
+                        description: Nombre único de la categoría
+                      descripcion:
+                        type: string
+                        nullable: true
+                        description: Descripción opcional
+                      icono:
+                        type: string
+                        nullable: true
+                        description: URL o nombre del icono
+                      activa:
+                        type: boolean
+                        default: true
+                        description: Si la categoría está activa
+                      fechaCreacion:
+                        type: string
+                        format: date-time
+                        description: Fecha de creación
+                  multimedia:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: ObjectId de MongoDB
+                        id_publicacion:
+                          type: string
+                          description: ObjectId de la publicación
+                        url:
+                          type: string
+                          description: Link del archivo en repositorio
+                        cloudinaryPublicId:
+                          type: string
+                          nullable: true
+                          description: Public ID de Cloudinary para eliminación
+                        orden:
+                          type: integer
+                          default: 0
+                          description: Orden numérico de visualización
+                        tipo:
+                          type: string
+                          enum: [imagen, video]
+                          default: imagen
+                          description: Tipo de multimedia
+        '404':
+          description: Publicación no encontrada
+        '400':
+          description: Datos inválidos
+
+    delete:
+      tags:
+        - Publicaciones
+      summary: Eliminar publicación (soft delete)
+      description: Cambia el estado de la publicación a "ELIMINADO" sin borrarla de la base de datos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Publicación eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Publicación eliminada exitosamente"
+        '404':
+          description: Publicación no encontrada
+        '400':
+          description: La publicación ya está eliminada
+
+  /publicaciones/eliminar/{id}:
+    delete:
+      tags:
+        - Publicaciones
+      summary: Eliminar publicación permanentemente (hard delete)
+      description: Elimina físicamente la publicación de la base de datos. Esta acción es irreversible.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Publicación eliminada completamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Publicación eliminada completamente"
+        '404':
+          description: Publicación no encontrada
+
+  /publicaciones/{id}/estado:
+    patch:
+      tags:
+        - Publicaciones
+      summary: Cambiar estado de publicación
+      description: Actualiza únicamente el estado de una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - estado
+              properties:
+                estado:
+                  type: string
+                  enum:
+                    - BORRADOR
+                    - EN REVISION
+                    - ACTIVO
+                    - PAUSADO
+                    - VENDIDO
+                    - RECHAZADO
+                    - ELIMINADO
+            example:
+              estado: "APROBADO"
+      responses:
+        '200':
+          description: Estado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ObjectId de MongoDB
+                  id_vendedor:
+                    type: string
+                    description: ID del vendedor (referencia externa)
+                  id_producto:
+                    type: string
+                    nullable: true
+                    description: ID del producto
+                  titulo:
+                    type: string
+                  descripcion:
+                    type: string
+                  categoriaId:
+                    type: string
+                    description: ObjectId de la categoría
+                  estado:
+                    type: string
+                    enum:
+                      - BORRADOR
+                      - EN REVISION
+                      - ACTIVO
+                      - PAUSADO
+                      - VENDIDO
+                      - RECHAZADO
+                      - ELIMINADO
+                  fechaCreacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de creación automática
+                  fechaModificacion:
+                    type: string
+                    format: date-time
+                    description: Fecha de última modificación (updatedAt)
+                  categoria:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: ObjectId de MongoDB
+                      nombre:
+                        type: string
+                        description: Nombre único de la categoría
+                      descripcion:
+                        type: string
+                        nullable: true
+                        description: Descripción opcional
+                      icono:
+                        type: string
+                        nullable: true
+                        description: URL o nombre del icono
+                      activa:
+                        type: boolean
+                        default: true
+                        description: Si la categoría está activa
+                      fechaCreacion:
+                        type: string
+                        format: date-time
+                        description: Fecha de creación
+                  multimedia:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: ObjectId de MongoDB
+                        id_publicacion:
+                          type: string
+                          description: ObjectId de la publicación
+                        url:
+                          type: string
+                          description: Link del archivo en repositorio
+                        cloudinaryPublicId:
+                          type: string
+                          nullable: true
+                          description: Public ID de Cloudinary para eliminación
+                        orden:
+                          type: integer
+                          default: 0
+                          description: Orden numérico de visualización
+                        tipo:
+                          type: string
+                          enum: [imagen, video]
+                          default: imagen
+                          description: Tipo de multimedia
+        '404':
+          description: Publicación no encontrada
+
+  /publicaciones/{id}/multimedia:
+    post:
+      tags:
+        - Multimedia
+      summary: Agregar multimedia a publicación
+      description: Agrega una imagen o video a una publicación existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la publicación
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - orden
+              properties:
+                url:
+                  type: string
+                  description: URL del archivo en repositorio
+                cloudinaryPublicId:
+                  type: string
+                  description: Public ID de Cloudinary (opcional)
+                  nullable: true
+                orden:
+                  type: integer
+                  description: Orden de visualización
+                tipo:
+                  type: string
+                  enum: [imagen, video]
+                  default: imagen
+            example:
+              url: "https://res.cloudinary.com/demo/image2.jpg"
+              cloudinaryPublicId: "demo/image2"
+              orden: 2
+              tipo: "imagen"
+      responses:
+        '201':
+          description: Multimedia agregada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ObjectId de MongoDB
+                  id_publicacion:
+                    type: string
+                    description: ObjectId de la publicación
+                  url:
+                    type: string
+                    description: Link del archivo en repositorio
+                  cloudinaryPublicId:
+                    type: string
+                    nullable: true
+                    description: Public ID de Cloudinary para eliminación
+                  orden:
+                    type: integer
+                    default: 0
+                    description: Orden numérico de visualización
+                  tipo:
+                    type: string
+                    enum: [imagen, video]
+                    default: imagen
+                    description: Tipo de multimedia
+        '404':
+          description: Publicación no encontrada
+
+  /publicaciones/multimedia/{multimediaId}:
+    delete:
+      tags:
+        - Multimedia
+      summary: Eliminar multimedia
+      description: Elimina una imagen o video de una publicación
+      parameters:
+        - name: multimediaId
+          in: path
+          required: true
+          description: ID de la multimedia a eliminar
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Multimedia eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje:
+                    type: string
+                    example: "Multimedia eliminada exitosamente"
+        '404':
+          description: Multimedia no encontrada
+
+  /publicaciones/{id}/moderacion:
+    post:
+      tags:
+        - Moderación
+      summary: Agregar moderación a publicación
+      description: Registra una acción de moderación sobre una publicación
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la publicación
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - accion
+                - comentario
+              properties:
+                id_moderador:
+                  type: string
+                  description: ID del moderador (opcional, null si es automático)
+                  nullable: true
                 accion:
                   type: string
-                  enum: [APROBAR, RECHAZAR]
+                  enum: [APROBADO, RECHAZADO]
+                  description: Acción de moderación
+                comentario:
+                  type: string
+                  description: Comentario del moderador o error presentado
+            example:
+              id_moderador: "mod_001"
+              accion: "RECHAZADO"
+              comentario: "Las imágenes no cumplen con las políticas de la plataforma"
       responses:
-        "200":
-          description: Estado de publicación actualizado
-        "400":
-          description: Acción inválida
-        "404":
+        '201':
+          description: Moderación registrada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ObjectId de MongoDB
+                  id_publicacion:
+                    type: string
+                    description: ObjectId de la publicación
+                  id_moderador:
+                    type: string
+                    nullable: true
+                    description: ID del moderador (null si es automático)
+                  accion:
+                    type: string
+                    enum: [APROBADO, RECHAZADO]
+                    description: Acción de moderación
+                  comentario:
+                    type: string
+                    description: Comentario o error presentado
+                  fecha:
+                    type: string
+                    format: date-time
+                    description: Fecha de la moderación
+        '404':
           description: Publicación no encontrada
-        "500":
-          description: Error al cambiar estado

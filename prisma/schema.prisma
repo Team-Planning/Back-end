@@ -32,7 +32,7 @@ model Publicacion {
   descripcion         String
   categoria           Categoria   @relation(fields: [categoriaId], references: [id])
   categoriaId         String      @db.ObjectId
-  estado              String      @default("EN REVISION") // Estados: "BORRADOR", "EN REVISION", "ACTIVO", "PAUSADO", "VENDIDO", "RECHAZADO"
+  estado              String      @default("EN REVISION") // Estados: "BORRADOR", "EN REVISION", "ACTIVO", "PAUSADO", "VENDIDO", "RECHAZADO", "ELIMINADO"
   fechaCreacion       DateTime    @default(now())
   fechaModificacion   DateTime    @updatedAt
   multimedia          Multimedia[]
