@@ -10,59 +10,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modelo de Categoría
-model Categoria {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  nombre        String         @unique
-  descripcion   String?
-  icono         String?        // URL o nombre del icono
-  activa        Boolean        @default(true)
-  fechaCreacion DateTime       @default(now())
-  publicaciones Publicacion[]
-
-  @@map("categorias")
-}
-
 // Modelo de Publicación
-model Publicacion {
-  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
-  id_vendedor         String      // ID del vendedor (referencia externa a otro microservicio)
-  id_producto         String?     // ID del producto (si aplica)
+model publicacion {
+  id                  String        @id @default(auto()) @map("_id") @db.ObjectId
+  id_vendedor         String        // ID del vendedor (referencia externa a otro microservicio)
+  id_producto         String        // ID del producto (referencia externa al microservicio de productos)
   titulo              String
   descripcion         String
-  categoria           Categoria   @relation(fields: [categoriaId], references: [id])
-  categoriaId         String      @db.ObjectId
-  estado              String      @default("EN REVISION") // Estados: "BORRADOR", "EN REVISION", "ACTIVO", "PAUSADO", "VENDIDO", "RECHAZADO", "ELIMINADO"
-  fechaCreacion       DateTime    @default(now())
-  fechaModificacion   DateTime    @updatedAt
-  multimedia          Multimedia[]
-  moderaciones        Moderacion[]
+  despacho            String        @default("retiro_en_tienda") // Opciones: "retiro_en_tienda", "envio", "ambos"
+  precio_envio        Float?        // Precio del envío (si aplica)
+  estado              String        @default("en_revision") // Estados: "borrador", "en_revision", "activo", "pausado", "vendido", "rechazado", "eliminado"
+  fecha_creacion      DateTime      @default(now())
+  fecha_modificacion  DateTime      @updatedAt
+  multimedia          multimedia[]
+  moderaciones        moderacion[]
 
   @@map("publicaciones")
 }
 
 // Modelo de Multimedia (imágenes/videos de la publicación)
-model Multimedia {
-  id                  String      @id @default(auto()) @map("_id") @db.ObjectId
-  publicacion         Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
-  id_publicacion      String      @db.ObjectId
-  url                 String      // Link de la imagen/video guardado en repositorio
-  cloudinaryPublicId  String?     // Public ID de Cloudinary para poder eliminar la imagen
-  orden               Int         @default(0) // Orden numérico de la imagen
-  tipo                String      @default("imagen") // "imagen" o "video"
+model multimedia {
+  id                      String        @id @default(auto()) @map("_id") @db.ObjectId
+  publicacion             publicacion   @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+  id_publicacion          String        @db.ObjectId
+  url                     String        // Link de la imagen/video guardado en repositorio
+  cloudinary_public_id    String?       // Public ID de Cloudinary para poder eliminar la imagen
+  orden                   Int           @default(0) // Orden numérico de la imagen
+  tipo                    String        @default("imagen") // "imagen" o "video"
 
   @@map("multimedia")
 }
 
 // Modelo de Moderación
-model Moderacion {
-  id              String      @id @default(auto()) @map("_id") @db.ObjectId
-  publicacion     Publicacion @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
-  id_publicacion  String      @db.ObjectId
-  id_moderador    String?     // ID del administrador (moderador) - puede ser null si es automático
-  accion          String      // "APROBADO" o "RECHAZADO"
-  comentario      String      // Corresponde al error que presentó
-  fecha           DateTime    @default(now())
+model moderacion {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  publicacion       publicacion   @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
+  id_publicacion    String        @db.ObjectId
+  id_moderador      String?       // ID del administrador (moderador) - puede ser null si es automático
+  tipo_moderacion   String        // "automatica" o "manual"
+  accion            String        // "aprobado" o "rechazado"
+  motivo            String        // Motivo del rechazo o aprobación
+  palabras_detectadas String[]    @default([]) // Lista de palabras indebidas encontradas
+  contenido_detectado String[]    @default([]) // Tipos de contenido detectado: "sexual", "armas", "drogas", etc.
+  fecha             DateTime      @default(now())
 
   @@map("moderaciones")
 }

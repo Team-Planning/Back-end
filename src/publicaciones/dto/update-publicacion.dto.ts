@@ -3,7 +3,9 @@ import {
   IsOptional,
   MaxLength,
   MinLength,
-  IsMongoId
+  IsNumber,
+  Min,
+  IsIn
 } from 'class-validator';
 
 export class UpdatePublicacionDto {
@@ -28,10 +30,17 @@ export class UpdatePublicacionDto {
   descripcion?: string;
 
   @IsOptional()
-  @IsMongoId()
-  categoriaId?: string;
+  @IsString()
+  @IsIn(['retiro_en_tienda', 'envio', 'ambos'])
+  despacho?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  precio_envio?: number;
 
   @IsOptional()
   @IsString()
+  @IsIn(['borrador', 'en_revision', 'activo', 'pausado', 'vendido', 'rechazado', 'eliminado'])
   estado?: string;
 }

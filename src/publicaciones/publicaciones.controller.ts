@@ -75,13 +75,24 @@ export class PublicacionesController {
     return this.publicacionesService.eliminarMultimedia(multimediaId);
   }
 
-  // Endpoint para agregar moderación
+  // Endpoint para agregar moderación manual
   @Post(':id/moderacion')
   @HttpCode(HttpStatus.CREATED)
   async agregarModeracion(
     @Param('id') id: string,
-    @Body() body: { id_moderador?: string; accion: string; comentario: string }
+    @Body() body: { id_moderador: string; accion: 'aprobado' | 'rechazado'; motivo: string }
   ) {
-    return this.publicacionesService.agregarModeracion(id, body);
+    return this.publicacionesService.agregarModeracionManual(
+      id,
+      body.id_moderador,
+      body.accion,
+      body.motivo,
+    );
+  }
+
+  // Endpoint para obtener historial de moderación
+  @Get(':id/moderacion')
+  async obtenerHistorialModeracion(@Param('id') id: string) {
+    return this.publicacionesService.obtenerHistorialModeracion(id);
   }
 }

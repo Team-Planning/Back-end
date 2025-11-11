@@ -8,7 +8,9 @@ import {
   IsOptional,
   ValidateNested,
   IsInt,
-  Min
+  Min,
+  IsNumber,
+  IsIn
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -32,8 +34,8 @@ export class CreatePublicacionDto {
   id_vendedor: string;
 
   @IsString()
-  @IsOptional()
-  id_producto?: string;
+  @IsNotEmpty()
+  id_producto: string; // Referencia al microservicio de productos
 
   @IsString()
   @IsNotEmpty()
@@ -47,13 +49,20 @@ export class CreatePublicacionDto {
   @MaxLength(1000)
   descripcion: string;
 
-  @IsMongoId()
-  @IsNotEmpty()
-  categoriaId: string;
+  @IsString()
+  @IsOptional()
+  @IsIn(['retiro_en_tienda', 'envio', 'ambos'])
+  despacho?: string; // Por defecto será "retiro_en_tienda"
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  precio_envio?: number;
 
   @IsOptional()
   @IsString()
-  estado?: string; // Por defecto será "EN REVISION"
+  @IsIn(['borrador', 'en_revision', 'activo', 'pausado', 'vendido', 'rechazado', 'eliminado'])
+  estado?: string; // Por defecto será "en_revision"
 
   @IsArray()
   @IsOptional()

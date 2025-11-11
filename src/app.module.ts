@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 // import { UsersModule } from './users/users.module';
 import { PublicacionesModule } from './publicaciones/publicaciones.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { CategoriasModule } from './categorias/categorias.module';
+import { ModeracionModule } from './moderacion/moderacion.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
@@ -24,7 +24,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     // AuthModule,  // Comentado - No es responsabilidad de este microservicio
     // UsersModule, // Comentado - No es responsabilidad de este microservicio
     PublicacionesModule,
-    CategoriasModule,
+    ModeracionModule,
   ],
 })
 export class AppModule {}

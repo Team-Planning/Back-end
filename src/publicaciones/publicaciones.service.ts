@@ -1,22 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ModeracionService } from '../moderacion/moderacion.service';
 import { CreatePublicacionDto } from './dto/create-publicacion.dto';
 import { UpdatePublicacionDto } from './dto/update-publicacion.dto';
 
 @Injectable()
 export class PublicacionesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly moderacionService: ModeracionService,
+  ) {}
 
   async crear(dto: CreatePublicacionDto) {
-    // Verificar que la categoría existe
-    const categoria = await this.prisma.categoria.findUnique({
-      where: { id: dto.categoriaId },
-    });
-
-    if (!categoria) {
-      throw new BadRequestException('La categoría especificada no existe');
-    }
-
     // Crear la publicación con multimedia si existe
     const publicacion = await this.prisma.publicacion.create({
       data: {
@@ -24,8 +19,9 @@ export class PublicacionesService {
         id_producto: dto.id_producto,
         titulo: dto.titulo,
         descripcion: dto.descripcion,
-        categoriaId: dto.categoriaId,
-        estado: dto.estado || 'EN REVISIÓN',
+        despacho: dto.despacho || 'retiro_en_tienda',
+        precio_envio: dto.precio_envio,
+        estado: 'en_revision', // Siempre inicia en revisión
         multimedia: dto.multimedia
           ? {
               create: dto.multimedia.map((m) => ({
@@ -37,29 +33,35 @@ export class PublicacionesService {
           : undefined,
       },
       include: {
-        categoria: true,
         multimedia: {
           orderBy: { orden: 'asc' },
         },
       },
     });
 
-    return publicacion;
+    // Ejecutar moderación automática
+    await this.moderacionService.moderarPublicacion(
+      publicacion.id,
+      publicacion.titulo,
+      publicacion.descripcion,
+    );
+
+    // Retornar la publicación actualizada
+    return this.obtenerPorId(publicacion.id);
   }
 
   async listarTodas() {
     return this.prisma.publicacion.findMany({
       where: {
-        estado: { not: 'ELIMINADO' },
+        estado: { not: 'eliminado' },
       },
       include: {
-        categoria: true,
         multimedia: {
           orderBy: { orden: 'asc' },
         },
       },
       orderBy: {
-        fechaCreacion: 'desc',
+        fecha_creacion: 'desc',
       },
     });
   }
@@ -68,7 +70,6 @@ export class PublicacionesService {
     const publicacion = await this.prisma.publicacion.findUnique({
       where: { id },
       include: {
-        categoria: true,
         multimedia: {
           orderBy: { orden: 'asc' },
         },
@@ -89,17 +90,6 @@ export class PublicacionesService {
     // Verificar que la publicación existe
     await this.obtenerPorId(id);
 
-    // Si se actualiza la categoría, verificar que existe
-    if (dto.categoriaId) {
-      const categoria = await this.prisma.categoria.findUnique({
-        where: { id: dto.categoriaId },
-      });
-
-      if (!categoria) {
-        throw new BadRequestException('La categoría especificada no existe');
-      }
-    }
-
     const publicacion = await this.prisma.publicacion.update({
       where: { id },
       data: {
@@ -107,11 +97,11 @@ export class PublicacionesService {
         id_producto: dto.id_producto,
         titulo: dto.titulo,
         descripcion: dto.descripcion,
-        categoriaId: dto.categoriaId,
+        despacho: dto.despacho,
+        precio_envio: dto.precio_envio,
         estado: dto.estado,
       },
       include: {
-        categoria: true,
         multimedia: {
           orderBy: { orden: 'asc' },
         },
@@ -126,14 +116,14 @@ export class PublicacionesService {
     const publicacion = await this.obtenerPorId(id);
 
     // Verificar que no esté ya eliminada
-    if (publicacion.estado === 'ELIMINADO') {
+    if (publicacion.estado === 'eliminado') {
       throw new BadRequestException('La publicación ya está eliminada');
     }
 
-    // Actualizar el estado a 'eliminada'
+    // Actualizar el estado a 'eliminado'
     await this.prisma.publicacion.update({
       where: { id },
-      data: { estado: 'ELIMINADO' }
+      data: { estado: 'eliminado' }
     });
 
     return { mensaje: 'Publicación eliminada exitosamente' };
@@ -159,7 +149,6 @@ export class PublicacionesService {
       where: { id },
       data: { estado },
       include: {
-        categoria: true,
         multimedia: {
           orderBy: { orden: 'asc' },
         },
@@ -199,20 +188,26 @@ export class PublicacionesService {
     return { mensaje: 'Multimedia eliminada exitosamente' };
   }
 
-  // Método para agregar moderación
-  async agregarModeracion(
+  // Método para agregar moderación manual
+  async agregarModeracionManual(
     publicacionId: string,
-    moderacion: { id_moderador?: string; accion: string; comentario: string },
+    idModerador: string,
+    accion: 'aprobado' | 'rechazado',
+    motivo: string,
   ) {
     await this.obtenerPorId(publicacionId);
 
-    return this.prisma.moderacion.create({
-      data: {
-        id_publicacion: publicacionId,
-        id_moderador: moderacion.id_moderador,
-        accion: moderacion.accion,
-        comentario: moderacion.comentario,
-      },
-    });
+    return this.moderacionService.moderacionManual(
+      publicacionId,
+      idModerador,
+      accion,
+      motivo,
+    );
+  }
+
+  // Método para obtener historial de moderación
+  async obtenerHistorialModeracion(publicacionId: string) {
+    await this.obtenerPorId(publicacionId);
+    return this.moderacionService.obtenerHistorialModeracion(publicacionId);
   }
 }
