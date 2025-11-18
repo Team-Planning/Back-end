@@ -43,7 +43,6 @@ export class PublicacionesService {
                 url: m.url,
                 orden: m.orden,
                 tipo: m.tipo || 'imagen',
-                // si tu DTO ya tiene esta propiedad:
                 cloudinary_public_id: m.cloudinary_public_id ?? null,
               })),
             }
@@ -56,14 +55,12 @@ export class PublicacionesService {
       },
     });
 
-    // Ejecutar moderación automática
     await this.moderacionService.moderarPublicacion(
       publicacion.id,
       publicacion.titulo,
       publicacion.descripcion,
     );
 
-    // Retornar la publicación actualizada (con moderaciones incluidas)
     return this.obtenerPorId(publicacion.id);
   }
 
@@ -193,7 +190,6 @@ export class PublicacionesService {
     return actualizada;
   }
 
-  // Métodos adicionales para gestión de multimedia
   async agregarMultimedia(
     publicacionId: string,
     multimedia: { url: string; orden: number; tipo?: string; cloudinary_public_id?: string },
@@ -246,8 +242,6 @@ export class PublicacionesService {
   ) {
     await this.obtenerPorId(publicacionId);
 
-    // Delegas en el servicio de moderación, que debería respetar el modelo:
-    // tipo_moderacion = 'manual', palabras_detectadas = [], contenido_detectado = []
     return this.moderacionService.moderacionManual(
       publicacionId,
       idModerador,
@@ -256,7 +250,6 @@ export class PublicacionesService {
     );
   }
 
-  // Método para obtener historial de moderación
   async obtenerHistorialModeracion(publicacionId: string) {
     await this.obtenerPorId(publicacionId);
     return this.moderacionService.obtenerHistorialModeracion(publicacionId);
