@@ -93,8 +93,6 @@ export class PublicacionesService {
     const publicacion = await this.prisma.publicacion.update({
       where: { id },
       data: {
-        id_vendedor: dto.id_vendedor,
-        id_producto: dto.id_producto,
         titulo: dto.titulo,
         descripcion: dto.descripcion,
         despacho: dto.despacho,
