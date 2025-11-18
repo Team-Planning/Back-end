@@ -44,7 +44,7 @@ export class PublicacionesService {
                 orden: m.orden,
                 tipo: m.tipo || 'imagen',
                 // si tu DTO ya tiene esta propiedad:
-                cloudinary_public_id: (m as any).cloudinary_public_id ?? null,
+                cloudinary_public_id: m.cloudinary_public_id ?? null,
               })),
             }
           : undefined,
