@@ -11,14 +11,6 @@ import {
 export class UpdatePublicacionDto {
   @IsOptional()
   @IsString()
-  id_vendedor?: string;
-
-  @IsOptional()
-  @IsString()
-  id_producto?: string;
-
-  @IsOptional()
-  @IsString()
   @MinLength(5)
   @MaxLength(100)
   titulo?: string;
@@ -41,6 +33,14 @@ export class UpdatePublicacionDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['borrador', 'en_revision', 'activo', 'pausado', 'vendido', 'rechazado', 'eliminado'])
+  @IsIn([
+    'borrador',
+    'en_revision',
+    'activo',
+    'pausado',
+    'vendido',
+    'rechazado',
+    'eliminado'
+  ])
   estado?: string;
 }

@@ -4,17 +4,16 @@ import {
   MaxLength,
   MinLength,
   IsArray,
-  IsMongoId,
   IsOptional,
   ValidateNested,
   IsInt,
   Min,
   IsNumber,
-  IsIn
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class MultimediaDto {
+export class MultimediaDto {
   @IsString()
   @IsNotEmpty()
   url: string;
@@ -25,7 +24,12 @@ class MultimediaDto {
 
   @IsString()
   @IsOptional()
-  tipo?: string; // "imagen" o "video"
+  @IsIn(['imagen', 'video'])
+  tipo?: string;
+
+  @IsString()
+  @IsOptional()
+  cloudinary_public_id?: string;
 }
 
 export class CreatePublicacionDto {
@@ -35,7 +39,7 @@ export class CreatePublicacionDto {
 
   @IsString()
   @IsNotEmpty()
-  id_producto: string; // Referencia al microservicio de productos
+  id_producto: string;
 
   @IsString()
   @IsNotEmpty()
@@ -52,17 +56,12 @@ export class CreatePublicacionDto {
   @IsString()
   @IsOptional()
   @IsIn(['retiro_en_tienda', 'envio', 'ambos'])
-  despacho?: string; // Por defecto será "retiro_en_tienda"
+  despacho?: string;
 
   @IsNumber()
   @IsOptional()
   @Min(0)
   precio_envio?: number;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['borrador', 'en_revision', 'activo', 'pausado', 'vendido', 'rechazado', 'eliminado'])
-  estado?: string; // Por defecto será "en_revision"
 
   @IsArray()
   @IsOptional()

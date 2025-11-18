@@ -11,8 +11,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { PublicacionesService } from './publicaciones.service';
-import { CreatePublicacionDto } from './dto/create-publicacion.dto';
+import { CreatePublicacionDto, MultimediaDto } from './dto/create-publicacion.dto';
 import { UpdatePublicacionDto } from './dto/update-publicacion.dto';
+import { ModeracionManualDto } from './dto/moderacion-manual.dto';
 
 @Controller('publicaciones')
 export class PublicacionesController {
@@ -22,6 +23,29 @@ export class PublicacionesController {
   @HttpCode(HttpStatus.CREATED)
   async crear(@Body() dto: CreatePublicacionDto) {
     return this.publicacionesService.crear(dto);
+  }
+
+  @Post(':id/multimedia')
+  @HttpCode(HttpStatus.CREATED)
+  async agregarMultimedia(
+    @Param('id') id: string,
+    @Body() body: MultimediaDto
+  ) {
+    return this.publicacionesService.agregarMultimedia(id, body);
+  }
+
+  @Post(':id/moderacion')
+  @HttpCode(HttpStatus.CREATED)
+  async agregarModeracion(
+    @Param('id') id: string,
+    @Body() body: ModeracionManualDto
+  ) {
+    return this.publicacionesService.agregarModeracionManual(
+      id,
+      body.id_moderador,
+      body.accion,
+      body.motivo,
+    );
   }
 
   @Get()
@@ -34,16 +58,29 @@ export class PublicacionesController {
     return this.publicacionesService.obtenerPorId(id);
   }
 
+  @Get(':id/moderacion')
+  async obtenerHistorialModeracion(@Param('id') id: string) {
+    return this.publicacionesService.obtenerHistorialModeracion(id);
+  }
+
   @Put(':id')
   async actualizar(@Param('id') id: string, @Body() dto: UpdatePublicacionDto) {
     return this.publicacionesService.actualizar(id, dto);
   }
 
-  @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  async eliminar(@Param('id') id: string) {
-    return this.publicacionesService.eliminar(id);
+  @Patch(':id/estado')
+  async cambiarEstado(
+    @Param('id') id: string,
+    @Body('estado') estado: 'borrador' | 'en_revision' | 'activo' | 'pausado' | 'vendido' | 'rechazado' | 'eliminado'
+  ) {
+    return this.publicacionesService.cambiarEstado(id, estado);
   }
+
+  @Delete('multimedia/:multimediaId')
+    @HttpCode(HttpStatus.OK)
+    async eliminarMultimedia(@Param('multimediaId') multimediaId: string) {
+      return this.publicacionesService.eliminarMultimedia(multimediaId);
+    }
 
   @Delete('eliminar/:id')
   @HttpCode(HttpStatus.OK)
@@ -51,48 +88,9 @@ export class PublicacionesController {
     return this.publicacionesService.eliminarForzado(id);
   }
 
-  @Patch(':id/estado')
-  async cambiarEstado(
-    @Param('id') id: string,
-    @Body() body: { estado: string }
-  ) {
-    return this.publicacionesService.cambiarEstado(id, body.estado);
-  }
-
-  // Endpoints para gestión de multimedia
-  @Post(':id/multimedia')
-  @HttpCode(HttpStatus.CREATED)
-  async agregarMultimedia(
-    @Param('id') id: string,
-    @Body() body: { url: string; orden: number; tipo?: string }
-  ) {
-    return this.publicacionesService.agregarMultimedia(id, body);
-  }
-
-  @Delete('multimedia/:multimediaId')
+  @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async eliminarMultimedia(@Param('multimediaId') multimediaId: string) {
-    return this.publicacionesService.eliminarMultimedia(multimediaId);
-  }
-
-  // Endpoint para agregar moderación manual
-  @Post(':id/moderacion')
-  @HttpCode(HttpStatus.CREATED)
-  async agregarModeracion(
-    @Param('id') id: string,
-    @Body() body: { id_moderador: string; accion: 'aprobado' | 'rechazado'; motivo: string }
-  ) {
-    return this.publicacionesService.agregarModeracionManual(
-      id,
-      body.id_moderador,
-      body.accion,
-      body.motivo,
-    );
-  }
-
-  // Endpoint para obtener historial de moderación
-  @Get(':id/moderacion')
-  async obtenerHistorialModeracion(@Param('id') id: string) {
-    return this.publicacionesService.obtenerHistorialModeracion(id);
+  async eliminar(@Param('id') id: string) {
+    return this.publicacionesService.eliminar(id);
   }
 }

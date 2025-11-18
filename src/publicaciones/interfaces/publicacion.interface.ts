@@ -1,15 +1,45 @@
-import { Document } from 'mongoose';
-
-export interface Publicacion extends Document {
+export interface Publicacion {
+  id: string;
   id_vendedor: string;
   id_producto: string;
+
   titulo: string;
   descripcion: string;
+
   despacho: 'retiro_en_tienda' | 'envio' | 'ambos';
-  precio_envio?: number;
-  multimedia: string[];
-  estado: 'borrador' | 'en revision' | 'rechazada' | 'activa' | 'pausada' | 'eliminada';
-  fechaCreacion: Date;
-  fechaModificacion?: Date;
-  comentarioModerador?: string;
+  precio_envio?: number | null;
+
+  estado:
+    | 'borrador'
+    | 'en_revision'
+    | 'activo'
+    | 'pausado'
+    | 'vendido'
+    | 'rechazado'
+    | 'eliminado';
+
+  fecha_creacion: Date;
+  fecha_modificacion: Date;
+
+  multimedia: {
+    id: string;
+    url: string;
+    cloudinary_public_id?: string | null;
+    orden: number;
+    tipo: 'imagen' | 'video';
+  }[];
+
+  moderaciones: {
+    id: string;
+    id_publicacion: string;
+    id_moderador?: string | null;
+
+    tipo_moderacion: 'automatica' | 'manual';
+    accion: 'aprobado' | 'rechazado';
+    motivo: string;
+
+    palabras_detectadas: string[];
+    contenido_detectado: string[];
+    fecha: Date;
+  }[];
 }
