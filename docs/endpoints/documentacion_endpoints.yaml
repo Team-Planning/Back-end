@@ -8,7 +8,7 @@ info:
     Datos como precio, stock, reseñas y datos del vendedor se obtienen dinámicamente desde otros microservicios.
 
 servers:
-  - url: http://localhost:4000/api
+  - url: http://localhost:4040/api
     description: Servidor de desarrollo
 
 tags:

@@ -1,12 +1,13 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
+  BadRequestException
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ModeracionService } from '../moderacion/moderacion.service';
 import { CreatePublicacionDto } from './dto/create-publicacion.dto';
 import { UpdatePublicacionDto } from './dto/update-publicacion.dto';
+import { HttpService } from '@nestjs/axios';
 
 const ESTADOS_VALIDOS = [
   'borrador',
@@ -25,6 +26,7 @@ export class PublicacionesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly moderacionService: ModeracionService,
+    private readonly httpService: HttpService,
   ) {}
 
   async crear(dto: CreatePublicacionDto) {
@@ -65,7 +67,7 @@ export class PublicacionesService {
   }
 
   async listarTodas() {
-    return this.prisma.publicacion.findMany({
+    const publicaciones = await this.prisma.publicacion.findMany({
       where: {
         estado: { not: 'eliminado' },
       },
@@ -78,6 +80,19 @@ export class PublicacionesService {
         fecha_creacion: 'desc',
       },
     });
+
+    const publicacionesEnriquecidas = await Promise.all(
+      publicaciones.map(async (pub) => {
+        const producto = await this.httpService.axiosRef
+          .get(`http://localhost:4003/api/productos/${pub.id_producto}`)
+          .then(res => res.data)
+          .catch(() => null);
+
+        return { ...pub, producto };
+      }),
+    );
+
+    return publicacionesEnriquecidas;
   }
 
   async obtenerPorId(id: string) {
