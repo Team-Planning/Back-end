@@ -81,10 +81,11 @@ export class PublicacionesService {
       },
     });
 
+    // Obtener datos del microservicio de productos
     const publicacionesEnriquecidas = await Promise.all(
       publicaciones.map(async (pub) => {
         const producto = await this.httpService.axiosRef
-          .get(`http://localhost:4003/api/productos/${pub.id_producto}`)
+          .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
           .then(res => res.data)
           .catch(() => null);
 
@@ -112,7 +113,23 @@ export class PublicacionesService {
       throw new NotFoundException(`Publicación con ID ${id} no encontrada`);
     }
 
-    return publicacion;
+    // Obtener datos del microservicio de productos
+    const producto = await this.httpService.axiosRef
+      .get(`http://localhost:16014/api/productos/${publicacion.id_producto}`)
+      .then((res) => res.data)
+      .catch(() => null);
+
+    // Obtener datos del microservicio de reseñas
+    const reseñas = await this.httpService.axiosRef
+      .get(`http://localhost:3500/ratings/publicacion/${producto.id}`)
+      .then((res) => res.data)
+      .catch(() => []);
+
+    return {
+      ...publicacion,
+      producto,
+      reseñas,
+    };
   }
 
   async actualizar(id: string, dto: UpdatePublicacionDto) {
