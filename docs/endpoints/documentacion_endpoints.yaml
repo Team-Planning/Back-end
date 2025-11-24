@@ -35,6 +35,7 @@ paths:
               type: object
               required:
                 - id_vendedor
+                - id_tienda
                 - id_producto
                 - titulo
                 - descripcion
@@ -93,6 +94,7 @@ paths:
                         default: imagen
             example:
               id_vendedor: "vendedor_001"
+              id_tienda: "tienda_123"
               id_producto: "producto_ABC123"
               titulo: "iPhone 13 Pro"
               descripcion: "Nuevo en caja, 256GB"
@@ -151,6 +153,8 @@ paths:
                     id:
                       type: string
                     id_vendedor:
+                      type: string
+                    id_tienda:
                       type: string
                     id_producto:
                       type: string
@@ -227,6 +231,8 @@ paths:
                   id:
                     type: string
                   id_vendedor:
+                    type: string
+                  id_tienda:
                     type: string
                   id_producto:
                     type: string

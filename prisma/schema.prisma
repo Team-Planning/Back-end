@@ -14,6 +14,7 @@ datasource db {
 model publicacion {
   id                  String        @id @default(auto()) @map("_id") @db.ObjectId
   id_vendedor         String        // ID del vendedor (referencia externa a otro microservicio)
+  id_tienda           String        // ID de la tienda (referencia externa a otro microservicio)
   id_producto         String        // ID del producto (referencia externa al microservicio de productos)
   titulo              String
   descripcion         String
