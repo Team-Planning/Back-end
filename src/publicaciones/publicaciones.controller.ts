@@ -9,15 +9,19 @@ import {
   Patch,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { PublicacionesService } from './publicaciones.service';
+import { CleanupService } from './cleanup.service';
 import { CreatePublicacionDto, MultimediaDto } from './dto/create-publicacion.dto';
 import { UpdatePublicacionDto } from './dto/update-publicacion.dto';
-import { ModeracionManualDto } from './dto/moderacion-manual.dto';
 
 @Controller('publicaciones')
 export class PublicacionesController {
-  constructor(private readonly publicacionesService: PublicacionesService) {}
+  constructor(
+    private readonly publicacionesService: PublicacionesService,
+    private readonly cleanupService: CleanupService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -34,23 +38,10 @@ export class PublicacionesController {
     return this.publicacionesService.agregarMultimedia(id, body);
   }
 
-  @Post(':id/moderacion')
-  @HttpCode(HttpStatus.CREATED)
-  async agregarModeracion(
-    @Param('id') id: string,
-    @Body() body: ModeracionManualDto
-  ) {
-    return this.publicacionesService.agregarModeracionManual(
-      id,
-      body.id_moderador,
-      body.accion,
-      body.motivo,
-    );
-  }
-
   @Get()
-  async listarTodas() {
-    return this.publicacionesService.listarTodas();
+  async listarTodas(@Query('includeEliminadas') includeEliminadas?: string) {
+    const incluir = includeEliminadas === 'true';
+    return this.publicacionesService.listarTodas(incluir);
   }
 
   @Get(':id')
@@ -63,7 +54,7 @@ export class PublicacionesController {
     return this.publicacionesService.obtenerHistorialModeracion(id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   async actualizar(@Param('id') id: string, @Body() dto: UpdatePublicacionDto) {
     return this.publicacionesService.actualizar(id, dto);
   }
@@ -92,5 +83,12 @@ export class PublicacionesController {
   @HttpCode(HttpStatus.OK)
   async eliminar(@Param('id') id: string) {
     return this.publicacionesService.eliminar(id);
+  }
+
+  @Post('cleanup/ejecutar')
+  @HttpCode(HttpStatus.OK)
+  async ejecutarLimpiezaManual() {
+    await this.cleanupService.ejecutarLimpiezaManual();
+    return { mensaje: 'Limpieza ejecutada correctamente' };
   }
 }

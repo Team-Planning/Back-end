@@ -14,14 +14,14 @@ datasource db {
 model publicacion {
   id                  String        @id @default(auto()) @map("_id") @db.ObjectId
   id_vendedor         String        // ID del vendedor (referencia externa a otro microservicio)
+  id_tienda           String?       // ID de la tienda (referencia externa al microservicio de tiendas) - Opcional temporalmente
   id_producto         String        // ID del producto (referencia externa al microservicio de productos)
   titulo              String
   descripcion         String
-  despacho            String        @default("retiro_en_tienda") // Opciones: "retiro_en_tienda", "envio", "ambos"
-  precio_envio        Float?        // Precio del envío (si aplica)
   estado              String        @default("en_revision") // Estados: "borrador", "en_revision", "activo", "pausado", "vendido", "rechazado", "eliminado"
   fecha_creacion      DateTime      @default(now())
   fecha_modificacion  DateTime      @updatedAt
+  fecha_eliminacion   DateTime?     // Fecha en que se marcó como eliminado (para borrado automático después de 1 mes)
   multimedia          multimedia[]
   moderaciones        moderacion[]
 
@@ -46,8 +46,7 @@ model moderacion {
   id                String        @id @default(auto()) @map("_id") @db.ObjectId
   publicacion       publicacion   @relation(fields: [id_publicacion], references: [id], onDelete: Cascade)
   id_publicacion    String        @db.ObjectId
-  id_moderador      String?       // ID del administrador (moderador) - puede ser null si es automático
-  tipo_moderacion   String        // "automatica" o "manual"
+  tipo_moderacion   String        // "automatica"
   accion            String        // "aprobado" o "rechazado"
   motivo            String        // Motivo del rechazo o aprobación
   palabras_detectadas String[]    @default([]) // Lista de palabras indebidas encontradas
