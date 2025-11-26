@@ -159,35 +159,6 @@ export class ModeracionService {
     return null;
   }
 
-  /**
-   * Moderación manual por un administrador
-   */
-  async moderacionManual(
-    publicacionId: string,
-    idModerador: string,
-    accion: 'aprobado' | 'rechazado',
-    motivo: string
-  ) {
-    const moderacion = await this.prisma.moderacion.create({
-      data: {
-        id_publicacion: publicacionId,
-        id_moderador: idModerador,
-        tipo_moderacion: 'manual',
-        accion,
-        motivo,
-        palabras_detectadas: [],
-        contenido_detectado: [],
-      }
-    });
-
-    await this.prisma.publicacion.update({
-      where: { id: publicacionId },
-      data: { estado: accion === 'aprobado' ? 'activo' : 'rechazado' }
-    });
-
-    return moderacion;
-  }
-
   async obtenerHistorialModeracion(publicacionId: string): Promise<any[]> {
     return this.prisma.moderacion.findMany({
       where: { id_publicacion: publicacionId },

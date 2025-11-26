@@ -38,8 +38,8 @@ export class CreatePublicacionDto {
   id_vendedor: string;
 
   @IsString()
-  @IsNotEmpty()
-  id_tienda: string;
+  @IsOptional()
+  id_tienda?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -56,16 +56,6 @@ export class CreatePublicacionDto {
   @MinLength(10)
   @MaxLength(1000)
   descripcion: string;
-
-  @IsString()
-  @IsOptional()
-  @IsIn(['retiro_en_tienda', 'envio', 'ambos'])
-  despacho?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  precio_envio?: number;
 
   @IsArray()
   @IsOptional()

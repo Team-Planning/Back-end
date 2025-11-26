@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 // import { AuthModule } from './auth/auth.module';
 // import { UsersModule } from './users/users.module';
 import { PublicacionesModule } from './publicaciones/publicaciones.module';
@@ -13,6 +14,9 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     ConfigModule.forRoot({
       isGlobal: true, // Disponible en toda la aplicación
     }),
+    
+    // Schedule Module para tareas programadas (limpieza automática)
+    ScheduleModule.forRoot(),
     
     // Prisma Module (Global)
     PrismaModule,

@@ -33,7 +33,7 @@ export const PublicacionSchema = new Schema({
   },
   estado: {
     type: String,
-    enum: ['borrador', 'revision', 'activo', 'pausado', 'vendida', 'rechazada'],
+    enum: ['borrador', 'revision', 'activo', 'pausado', 'vendida', 'rechazada', 'eliminado'],
     default: 'revision'
   },
   fechaCreacion: {

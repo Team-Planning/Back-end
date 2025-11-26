@@ -3,8 +3,6 @@ import {
   IsOptional,
   MaxLength,
   MinLength,
-  IsNumber,
-  Min,
   IsIn
 } from 'class-validator';
 
@@ -20,16 +18,6 @@ export class UpdatePublicacionDto {
   @MinLength(10)
   @MaxLength(1000)
   descripcion?: string;
-
-  @IsOptional()
-  @IsString()
-  @IsIn(['retiro_en_tienda', 'envio', 'ambos'])
-  despacho?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  precio_envio?: number;
 
   @IsOptional()
   @IsString()
