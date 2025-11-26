@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: PulgaShop - Microservicio de Publicaciones y Multimedia
-  version: 1.1.3
+  version: 2.1.2
   description: >
     API del microservicio de Publicaciones y Multimedia para el proyecto PulgaShop.  
     Este servicio gestiona la creación, edición, eliminación, obtención y moderación de publicaciones.
@@ -20,7 +20,6 @@ tags:
     description: Gestión de moderaciones de publicaciones
 
 paths:
-
   /publicaciones:
     post:
       tags:
