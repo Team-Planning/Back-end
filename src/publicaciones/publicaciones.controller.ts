@@ -58,6 +58,11 @@ export class PublicacionesController {
     return this.publicacionesService.obtenerPorId(id);
   }
 
+  @Get('tienda/:id_tienda')
+  async obtenerPorTienda(@Param('id_tienda') id_tienda: string) {
+    return this.publicacionesService.obtenerPorTienda(id_tienda);
+  }
+
   @Get(':id/moderacion')
   async obtenerHistorialModeracion(@Param('id') id: string) {
     return this.publicacionesService.obtenerHistorialModeracion(id);

@@ -115,17 +115,17 @@ export class PublicacionesService {
     }
 
     const resultados = await Promise.all(
-    publicaciones.map(async (pub) => {
-      const producto = await this.httpService.axiosRef
-        .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
-        .then((res) => res.data)
-        .catch(() => null);
+      publicaciones.map(async (pub) => {
+        const producto = await this.httpService.axiosRef
+          .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
+          .then((res) => res.data)
+          .catch(() => null);
 
-      return { ...pub, producto };
-    })
-  );
+        return { ...pub, producto };
+      })
+    );
 
-  return resultados;
+    return resultados;
   }
 
   async obtenerPorId(id: string) {
