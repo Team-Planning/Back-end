@@ -671,3 +671,109 @@ paths:
           description: Moderación registrada exitosamente
         '404':
           description: Publicación no encontrada
+
+  /moderacion/publicacion/{id}:
+    post:
+      tags:
+        - Moderación
+      summary: Moderar automáticamente una publicación
+      description: >
+        Analiza el título y la descripción de una publicación utilizando el motor
+        interno de detección de contenido inapropiado. Registra la moderación y
+        actualiza el estado de la publicación a 'rechazado' o 'activo'.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la publicación a moderar
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+      responses:
+        '201':
+          description: Resultado de la moderación automática
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  id_publicacion:
+                    type: string
+                  tipo_moderacion:
+                    type: string
+                    enum: [automatica, manual]
+                  accion:
+                    type: string
+                    enum: [aprobado, rechazado]
+                  motivo:
+                    type: string
+                  palabras_detectadas:
+                    type: array
+                    items:
+                      type: string
+                  contenido_detectado:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: Publicación no encontrada
+
+  /moderacion/publicacion/{id}/historial:
+  get:
+    tags:
+      - Moderación
+    summary: Obtener historial de moderación
+    description: Devuelve todas las moderaciones realizadas sobre la publicación, ordenadas por fecha descendente.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID de la publicación
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Historial de moderaciones de la publicación
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  id_publicacion:
+                    type: string
+                  tipo_moderacion:
+                    type: string
+                  accion:
+                    type: string
+                  motivo:
+                    type: string
+                  palabras_detectadas:
+                    type: array
+                    items:
+                      type: string
+                  contenido_detectado:
+                    type: array
+                    items:
+                      type: string
+                  fecha:
+                    type: string
+                    format: date-time
+      '404':
+        description: No existe historial para esta publicación
+

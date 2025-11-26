@@ -122,7 +122,7 @@ export class ModeracionService {
     const contenidoDetectado: string[] = [];
     const textoCompleto = `${titulo} ${descripcion}`;
 
-    const palabrasEncontradas = this.detectarPalabras(textoCompleto);
+    const { palabrasEncontradas } = this.verificarTexto(textoCompleto);
 
     // Determinar si la publicación debe ser rechazada
     const rechazar = palabrasEncontradas.length > 0;
@@ -166,7 +166,7 @@ export class ModeracionService {
     });
   }
 
-  verificarTexto(texto: string) {
+  private verificarTexto(texto: string) {
     const palabrasEncontradas = this.detectarPalabras(texto);
     return {
       limpio: palabrasEncontradas.length === 0,
