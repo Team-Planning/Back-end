@@ -44,6 +44,11 @@ export class PublicacionesController {
     return this.publicacionesService.listarTodas(incluir);
   }
 
+  @Get('tienda/:id_tienda')
+  async obtenerPorTienda(@Param('id_tienda') id_tienda: string) {
+    return this.publicacionesService.obtenerPorTienda(id_tienda);
+  }
+
   @Get(':id')
   async obtenerPorId(@Param('id') id: string) {
     return this.publicacionesService.obtenerPorId(id);

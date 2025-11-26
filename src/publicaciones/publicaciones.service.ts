@@ -109,6 +109,37 @@ export class PublicacionesService {
     }
   }
 
+  async obtenerPorTienda(id_tienda: string) {
+    const publicaciones = await this.prisma.publicacion.findMany({
+      where: { id_tienda },
+      include: {
+        multimedia: {
+          orderBy: { orden: 'asc' },
+        },
+        moderaciones: {
+          orderBy: { fecha: 'desc' },
+        },
+      },
+    });
+
+    if (!publicaciones || publicaciones.length === 0) {
+      throw new NotFoundException(`No hay publicaciones para la tienda ${id_tienda}`);
+    }
+
+    const resultados = await Promise.all(
+      publicaciones.map(async (pub) => {
+        const producto = await this.httpService.axiosRef
+          .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
+          .then((res) => res.data)
+          .catch(() => null);
+
+        return { ...pub, producto };
+      })
+    );
+
+    return resultados;
+  }
+
   async obtenerPorId(id: string) {
     try {
       const publicacion = await this.prisma.publicacion.findUnique({
