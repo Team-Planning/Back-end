@@ -378,122 +378,122 @@ paths:
           description: La publicación ya está eliminada
 
   /publicaciones/tienda/{id_tienda}:
-  get:
-    tags:
-      - Publicaciones
-    summary: Listar publicaciones por tienda
-    description: Obtiene todas las publicaciones asociadas a una tienda específica, incluyendo multimedia, moderaciones y el producto correspondiente.
-    parameters:
-      - name: id_tienda
-        in: path
-        required: true
-        description: ID de la tienda
-        schema:
-          type: string
-    responses:
-      '200':
-        description: Lista de publicaciones de la tienda
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
+    get:
+      tags:
+        - Publicaciones
+      summary: Listar publicaciones por tienda
+      description: Obtiene todas las publicaciones asociadas a una tienda específica, incluyendo multimedia, moderaciones y el producto correspondiente.
+      parameters:
+        - name: id_tienda
+          in: path
+          required: true
+          description: ID de la tienda
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de publicaciones de la tienda
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    id_vendedor:
+                      type: string
+                    id_tienda:
+                      type: string
+                    id_producto:
+                      type: string
+                    titulo:
+                      type: string
+                    descripcion:
+                      type: string
+                    despacho:
+                      type: string
+                      enum:
+                        - retiro_en_tienda
+                        - envio
+                        - ambos
+                    precio_envio:
+                      type: number
+                      nullable: true
+                    estado:
+                      type: string
+                      enum:
+                        - borrador
+                        - en_revision
+                        - activo
+                        - pausado
+                        - vendido
+                        - rechazado
+                        - eliminado
+                    fecha_creacion:
+                      type: string
+                      format: date-time
+                    fecha_modificacion:
+                      type: string
+                      format: date-time
+                    multimedia:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          url:
+                            type: string
+                          cloudinary_public_id:
+                            type: string
+                            nullable: true
+                          orden:
+                            type: integer
+                          tipo:
+                            type: string
+                            enum: [imagen, video]
+                            default: imagen
+                    moderaciones:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          id_publicacion:
+                            type: string
+                          motivo:
+                            type: string
+                          estado:
+                            type: string
+                          fecha:
+                            type: string
+                            format: date-time
+                    producto:
+                      type: object
+                      nullable: true
+                      description: >
+                        Información del producto asociada a la publicación,
+                        obtenida del microservicio de productos. Será null si no se
+                        pudo recuperar.
+        '404':
+          description: No hay publicaciones asociadas a la tienda especificada
+          content:
+            application/json:
+              schema:
                 type: object
                 properties:
-                  id:
+                  statusCode:
+                    type: integer
+                    example: 404
+                  message:
                     type: string
-                  id_vendedor:
+                    example: No hay publicaciones para la tienda {id_tienda}
+                  error:
                     type: string
-                  id_tienda:
-                    type: string
-                  id_producto:
-                    type: string
-                  titulo:
-                    type: string
-                  descripcion:
-                    type: string
-                  despacho:
-                    type: string
-                    enum:
-                      - retiro_en_tienda
-                      - envio
-                      - ambos
-                  precio_envio:
-                    type: number
-                    nullable: true
-                  estado:
-                    type: string
-                    enum:
-                      - borrador
-                      - en_revision
-                      - activo
-                      - pausado
-                      - vendido
-                      - rechazado
-                      - eliminado
-                  fecha_creacion:
-                    type: string
-                    format: date-time
-                  fecha_modificacion:
-                    type: string
-                    format: date-time
-                  multimedia:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        url:
-                          type: string
-                        cloudinary_public_id:
-                          type: string
-                          nullable: true
-                        orden:
-                          type: integer
-                        tipo:
-                          type: string
-                          enum: [imagen, video]
-                          default: imagen
-                  moderaciones:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        id_publicacion:
-                          type: string
-                        motivo:
-                          type: string
-                        estado:
-                          type: string
-                        fecha:
-                          type: string
-                          format: date-time
-                  producto:
-                    type: object
-                    nullable: true
-                    description: >
-                      Información del producto asociada a la publicación,
-                      obtenida del microservicio de productos. Será null si no se
-                      pudo recuperar.
-      '404':
-        description: No hay publicaciones asociadas a la tienda especificada
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                statusCode:
-                  type: integer
-                  example: 404
-                message:
-                  type: string
-                  example: No hay publicaciones para la tienda {id_tienda}
-                error:
-                  type: string
-                  example: Not Found
+                    example: Not Found
 
   /publicaciones/eliminar/{id}:
     delete:
@@ -730,49 +730,49 @@ paths:
           description: Publicación no encontrada
 
   /moderacion/publicacion/{id}/historial:
-  get:
-    tags:
-      - Moderación
-    summary: Obtener historial de moderación
-    description: Devuelve todas las moderaciones realizadas sobre la publicación, ordenadas por fecha descendente.
-    parameters:
-      - name: id
-        in: path
-        required: true
-        description: ID de la publicación
-        schema:
-          type: string
-    responses:
-      '200':
-        description: Historial de moderaciones de la publicación
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  id_publicacion:
-                    type: string
-                  tipo_moderacion:
-                    type: string
-                  accion:
-                    type: string
-                  motivo:
-                    type: string
-                  palabras_detectadas:
-                    type: array
-                    items:
+    get:
+      tags:
+        - Moderación
+      summary: Obtener historial de moderación
+      description: Devuelve todas las moderaciones realizadas sobre la publicación, ordenadas por fecha descendente.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la publicación
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Historial de moderaciones de la publicación
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
                       type: string
-                  contenido_detectado:
-                    type: array
-                    items:
+                    id_publicacion:
                       type: string
-                  fecha:
-                    type: string
-                    format: date-time
-      '404':
-        description: No existe historial para esta publicación
+                    tipo_moderacion:
+                      type: string
+                    accion:
+                      type: string
+                    motivo:
+                      type: string
+                    palabras_detectadas:
+                      type: array
+                      items:
+                        type: string
+                    contenido_detectado:
+                      type: array
+                      items:
+                        type: string
+                    fecha:
+                      type: string
+                      format: date-time
+        '404':
+          description: No existe historial para esta publicación
 

@@ -1,176 +1,239 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ModeracionService {
+  private readonly logger = new Logger(ModeracionService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
-  // Lista de palabras indebidas en español chileno
-  private readonly palabrasIndebidas = [
-  // Palabras ofensivas generales
-  'puta', 'puto', 'ctm', 'conchetumare', 'concha', 'maricon', 'marica',
-  'weon', 'weón', 'culiao', 'culiado', 'aweonao', 'aweonado',
-  'huevon', 'huevón', 'mierda', 'caca', 'poto', 'pico', 'pichula',
-  'tula', 'verga', 'pene', 'zorra', 'prostituta', 'trolo', 'roto', 'flaite',
+  // Palabras prohibidas organizadas por categoría
+  private readonly palabrasProhibidas = {
+    ofensivas: [
+      'puta', 'puto', 'ctm', 'conchetumare', 'concha', 'maricon', 'marica',
+      'weon', 'weon', 'culiao', 'culiado', 'aweonao', 'aweonado',
+      'huevon', 'huevon', 'mierda', 'caca', 'poto', 'pico', 'pichula',
+      'tula', 'verga', 'pene', 'zorra', 'prostituta', 'trolo', 'roto', 'flaite',
+    ],
+    drogas: [
+      'droga', 'drogas', 'cocaina', 'coca', 'marihuana', 'maria', 'mota',
+      'hierba', 'pasta', 'pbc', 'extasis', 'lsd', 'anfetamina', 'farlopa',
+      'farlar', 'jale', 'jalar', 'pase', 'perico', 'blanca', 'nieve',
+      'cripi', 'cripy', 'tusi', 'mdma', 'hachis', 'porro', 'opio', 'ketamina',
+    ],
+    armas: [
+      'pistola', 'revolver', 'fusil', 'rifle', 'escopeta', 'arma',
+      'arma blanca', 'bala', 'balas', 'municion', 'granada', 'explosivo',
+      'dinamita', 'metralleta', 'subfusil', 'cuchillo tactico',
+      'navaja automatica', 'silenciador', 'detonador',
+    ],
+    sexual: [
+      'sexo', 'porno', 'pornografia', 'xxx', 'escort',
+      'contenido adulto', 'servicio adulto', 'acompanante para adultos',
+      'prostitucion', 'trata', 'explotacion',
+    ],
+    fraude: [
+      'estafa', 'scam', 'fraude', 'estafador', 'fraudulento',
+      'robo', 'robado', 'choreo', 'robao', 'mercancia robada',
+      'pirata', 'falsificado', 'replica ilegal',
+      'clon', 'clonado', 'tarjeta clonada', 'phishing',
+      'software crackeado', 'crack', 'keygen', 'fake',
+      'hackear', 'hackeo', 'accedo a cuentas',
+      'cuentas robadas', 'desbloqueo ilegal', 'bypass',
+    ],
+    documentosFalsos: [
+      'carnet falso', 'licencia falsa', 'pasaporte falso',
+      'certificado falso', 'documento falsificado',
+      'boleta falsa', 'factura falsa',
+    ],
+    violencia: [
+      'pelea organizada', 'rina', 'amenaza', 'violencia',
+      'agredir', 'danar', 'ataque',
+    ],
+  };
 
-  // Drogas
-  'droga', 'drogas', 'cocaina', 'coca', 'marihuana', 'maria', 'mota',
-  'hierba', 'pasta', 'pbc', 'extasis', 'lsd', 'anfetamina', 'farlopa',
-  'farlar', 'jale', 'jalar', 'pase', 'perico', 'blanca', 'nieve',
-  'cripi', 'cripy', 'tusi', 'mdma', 'hachis', 'porro', 'opio',
-  'ketamina',
+  // Protección contra falsos positivos comunes
+  private readonly palabrasExcluidas = new Set([
+    'kayak', 'poker', 'kilo', 'kilometro', 'kernel', 'marketing',
+    'basket', 'token', 'ticket', 'whisky', 'kimchi'
+  ]);
 
-  // Armas
-  'pistola', 'revolver', 'fusil', 'rifle', 'escopeta', 'arma',
-  'arma blanca', 'bala', 'balas', 'municion', 'granada', 'explosivo',
-  'dinamita', 'metralleta', 'subfusil', 'cuchillo tactico',
-  'navaja automatica', 'silenciador', 'detonador',
-
-  // Contenido sexual indebido para publicaciones
-  'sexo', 'porno', 'pornografia', 'xxx', 'escort',
-  'contenido adulto', 'servicio adulto', 'acompanante para adultos',
-  'prostitucion', 'trata', 'explotacion',
-
-  // Delitos / estafas / fraude
-  'estafa', 'scam', 'fraude', 'estafador', 'fraudulento',
-  'robo', 'robado', 'choreo', 'robao', 'mercancia robada',
-  'pirata', 'falsificado', 'replica ilegal',
-  'clon', 'clonado', 'tarjeta clonada', 'phishing',
-  'software crackeado', 'crack', 'keygen', 'fake',
-  'hackear', 'hackeo', 'accedo a cuentas',
-  'cuentas robadas', 'desbloqueo ilegal', 'bypass',
-
-  // Documentos falsos y servicios ilegales
-  'carnet falso', 'licencia falsa', 'pasaporte falso',
-  'certificado falso', 'documento falsificado',
-  'boleta falsa', 'factura falsa',
-
-  // Contenido violento o de riesgo
-  'pelea organizada', 'riña', 'amenaza', 'violencia',
-  'agredir', 'dañar', 'ataque'
-];
-
-  // Normaliza un texto para facilitar la detección de palabras indebidas
   private normalizar(texto: string): string {
     return texto
       .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, '') // quita tildes
-      .replace(/[^a-z0-9]/g, '') // elimina símbolos
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
       .replace(/4/g, 'a')
       .replace(/3/g, 'e')
       .replace(/1/g, 'i')
-      .replace(/0/g, 'o')
-      .replace(/v/g, 'u')
-      .replace(/k/g, 'c');
+      .replace(/0/g, 'o');
   }
 
-  private distancia(a: string, b: string): number {
-    const dp = Array(a.length + 1).fill(null).map(() =>
-      Array(b.length + 1).fill(null)
-    );
+  private distanciaLevenshtein(a: string, b: string): number {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
 
-    for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-    for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+    const matriz: number[][] = Array(a.length + 1)
+      .fill(null)
+      .map(() => Array(b.length + 1).fill(0));
+
+    for (let i = 0; i <= a.length; i++) matriz[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matriz[0][j] = j;
 
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
         const costo = a[i - 1] === b[j - 1] ? 0 : 1;
-        dp[i][j] = Math.min(
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + costo
+        matriz[i][j] = Math.min(
+          matriz[i - 1][j] + 1,
+          matriz[i][j - 1] + 1,
+          matriz[i - 1][j - 1] + costo
         );
       }
     }
-    return dp[a.length][b.length];
+
+    return matriz[a.length][b.length];
   }
 
   private esSimilar(texto: string, palabra: string): boolean {
-    // tolerancia adaptativa
-    const maxDist = palabra.length <= 5 ? 1 : 2;
-    return this.distancia(texto, palabra) <= maxDist;
+    const maxDist = palabra.length <= 4 ? 0 : palabra.length <= 6 ? 1 : 2;
+    return this.distanciaLevenshtein(texto, palabra) <= maxDist;
   }
 
-  private detectarPalabras(texto: string): string[] {
+  private detectarPalabrasProhibidas(texto: string): {
+    palabrasEncontradas: string[];
+    categorias: string[];
+  } {
     const textoNorm = this.normalizar(texto);
-    const detectadas = new Set<string>();
+    const palabrasTexto = textoNorm.split(' ');
+    
+    const detectadas = new Map<string, string>();
 
-    for (const palabra of this.palabrasIndebidas) {
-      const baseNorm = this.normalizar(palabra);
+    if (palabrasTexto.some(p => this.palabrasExcluidas.has(p))) {
+    }
 
-      // detección exacta por inclusión
-      if (textoNorm.includes(baseNorm)) {
-        detectadas.add(palabra);
-        continue;
-      }
+    for (const [categoria, listaPalabras] of Object.entries(this.palabrasProhibidas)) {
+      for (const palabraProhibida of listaPalabras) {
+        const palabraNorm = this.normalizar(palabraProhibida);
+        
+        if (textoNorm.includes(palabraNorm)) {
+          detectadas.set(palabraProhibida, categoria);
+          continue;
+        }
 
-      // detección por similitud
-      for (let i = 0; i < textoNorm.length - baseNorm.length + 1; i++) {
-        const segmento = textoNorm.substring(i, i + baseNorm.length);
-        if (this.esSimilar(segmento, baseNorm)) {
-          detectadas.add(palabra);
-          break;
+        for (const palabraTexto of palabrasTexto) {
+          if (palabraTexto === palabraNorm) {
+            detectadas.set(palabraProhibida, categoria);
+            break;
+          }
+        }
+
+        if (palabraProhibida.length >= 5) {
+          for (const palabraTexto of palabrasTexto) {
+            if (Math.abs(palabraTexto.length - palabraNorm.length) <= 2) {
+              if (this.esSimilar(palabraTexto, palabraNorm)) {
+                detectadas.set(palabraProhibida, categoria);
+                break;
+              }
+            }
+          }
         }
       }
     }
 
-    return [...detectadas];
+    const categorias = [...new Set(detectadas.values())];
+    const palabrasEncontradas = [...detectadas.keys()];
+
+    return { palabrasEncontradas, categorias };
   }
 
-  // Modera automáticamente una publicación al crearla
-  async moderarPublicacion(publicacionId: string, titulo: string, descripcion: string): Promise<any> {
-    const contenidoDetectado: string[] = [];
-    const textoCompleto = `${titulo} ${descripcion}`;
+  async moderarPublicacion(
+    publicacionId: string,
+    titulo: string,
+    descripcion: string
+  ): Promise<any> {
+    try {
+      const textoCompleto = `${titulo} ${descripcion}`;
+      const { palabrasEncontradas, categorias } = this.detectarPalabrasProhibidas(textoCompleto);
 
-    const { palabrasEncontradas } = this.verificarTexto(textoCompleto);
+      const rechazar = palabrasEncontradas.length > 0;
+      const accion = rechazar ? 'rechazado' : 'aprobado';
 
-    // Determinar si la publicación debe ser rechazada
-    const rechazar = palabrasEncontradas.length > 0;
-    const accion = rechazar ? 'rechazado' : 'aprobado';
+      const motivo = rechazar
+        ? `Contenido inapropiado detectado. Categorías: ${categorias.join(', ')}. ` +
+          `Palabras: ${palabrasEncontradas.slice(0, 5).join(', ')}` +
+          (palabrasEncontradas.length > 5 ? ` (+${palabrasEncontradas.length - 5} más)` : '')
+        : 'Publicación aprobada automáticamente.';
 
-    const motivo = rechazar
-      ? `Contenido inapropiado detectado. Palabras prohibidas encontradas: ${palabrasEncontradas.join(', ')}`
-      : 'Publicación aprobada automáticamente.';
+      const resultado = await this.prisma.$transaction(async (tx) => {
+        const moderacion = await tx.moderacion.create({
+          data: {
+            id_publicacion: publicacionId,
+            tipo_moderacion: 'automatica',
+            accion,
+            motivo,
+            palabras_detectadas: palabrasEncontradas,
+            contenido_detectado: categorias,
+          },
+        });
 
-    // Crear registro de moderación
-    const moderacion = await this.prisma.moderacion.create({
-      data: {
-        id_publicacion: publicacionId,
-        tipo_moderacion: 'automatica',
-        accion,
-        motivo,
-        palabras_detectadas: palabrasEncontradas,
-        contenido_detectado: contenidoDetectado,
+        await tx.publicacion.update({
+          where: { id: publicacionId },
+          data: {
+            estado: rechazar ? 'rechazado' : 'activo',
+          },
+        });
+
+        return moderacion;
+      });
+
+      if (rechazar) {
+        this.logger.warn(
+          `Publicación ${publicacionId} rechazada: ${palabrasEncontradas.length} palabras prohibidas encontradas`
+        );
+      } else {
+        this.logger.log(`Publicación ${publicacionId} aprobada automáticamente`);
       }
-    });
 
-    // Actualizar el estado de la publicación
-    await this.prisma.publicacion.update({
-      where: { id: publicacionId },
-      data: {
-        estado: rechazar ? 'rechazado' : 'activo',
-      },
-    });
+      return resultado;
 
-    return moderacion;
-  }
-
-  async moderarImagen(publicacionId: string, imagenUrl: string): Promise<any> {
-    return null;
+    } catch (error) {
+      this.logger.error(
+        `Error al moderar publicación ${publicacionId}:`,
+        error.stack
+      );
+      throw new Error('Error al procesar la moderación de la publicación');
+    }
   }
 
   async obtenerHistorialModeracion(publicacionId: string): Promise<any[]> {
-    return this.prisma.moderacion.findMany({
-      where: { id_publicacion: publicacionId },
-      orderBy: { fecha: 'desc' },
-    });
+    try {
+      return await this.prisma.moderacion.findMany({
+        where: { id_publicacion: publicacionId },
+        orderBy: { fecha: 'desc' },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error al obtener historial de moderación para ${publicacionId}:`,
+        error.stack
+      );
+      throw new Error('Error al obtener el historial de moderación');
+    }
   }
 
-  private verificarTexto(texto: string) {
-    const palabrasEncontradas = this.detectarPalabras(texto);
+  verificarTexto(texto: string): {
+    limpio: boolean;
+    palabrasEncontradas: string[];
+    categorias: string[];
+  } {
+    const { palabrasEncontradas, categorias } = this.detectarPalabrasProhibidas(texto);
+    
     return {
       limpio: palabrasEncontradas.length === 0,
       palabrasEncontradas,
+      categorias,
     };
   }
 }
