@@ -315,11 +315,11 @@ export class PublicacionesService {
       throw new BadRequestException('Estado inválido');
     }
 
-    if (publicacion.estado === 'eliminado' && estado !== 'eliminado') {
-      throw new BadRequestException(
-        'No se puede cambiar el estado de una publicación eliminada',
-      );
-    }
+    //if (publicacion.estado === 'eliminado' && estado !== 'eliminado') {
+      //throw new BadRequestException(
+        //'No se puede cambiar el estado de una publicación eliminada',
+      //);
+    //}
 
     const actualizada = await this.prisma.publicacion.update({
       where: { id },
