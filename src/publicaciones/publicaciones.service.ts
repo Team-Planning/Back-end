@@ -70,15 +70,25 @@ export class PublicacionesService {
   async listarTodas(includeEliminadas: boolean = false) {
     try {
       const whereClause = includeEliminadas 
-        ? {} 
-        : { estado: { not: 'eliminado' } };
+      ? {} 
+      : { estado: { not: 'eliminado' } };
 
       const publicaciones = await this.prisma.publicacion.findMany({
         where: whereClause,
-        include: {
+        select : {
+          id: true,
+          id_producto: true,
+          titulo: true,
+          descripcion: true,
           multimedia: {
-            orderBy: { orden: 'asc' },
-          },
+            select: {
+              id: true,
+              url: true,
+              orden: true,
+            },
+            orderBy: { orden: 'asc'},
+            take: 1
+          }
         },
         orderBy: {
           fecha_creacion: 'desc',
@@ -90,8 +100,15 @@ export class PublicacionesService {
         publicaciones.map(async (pub) => {
           try {
             const producto = await this.httpService.axiosRef
-              .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
-              .then(res => res.data)
+              .get(`http://localhost:16014/api/productos/${pub.id_producto}`, {
+                params: {
+                  fields: 'precio,categoria,condicion,cantidad,marca'
+                },
+              })
+              .then(res => {
+                const { precio, categoria, condicion, cantidad, marca } = res.data;
+                return { precio, categoria, condicion, cantidad, marca };
+              })
               .catch(() => null);
 
             return { ...pub, producto };

@@ -138,10 +138,17 @@ paths:
       tags:
         - Publicaciones
       summary: Listar todas las publicaciones
-      description: Obtiene todas las publicaciones excepto las eliminadas
+      description: Obtiene todas las publicaciones (excepto eliminadas por defecto) con su primera imagen y datos del producto
+      parameters:
+        - in: query
+          name: includeEliminadas
+          schema:
+            type: boolean
+            default: false
+          description: Si es true, incluye publicaciones eliminadas
       responses:
         '200':
-          description: Lista de publicaciones
+          description: Lista de publicaciones con datos enriquecidos del microservicio de productos
           content:
             application/json:
               schema:
@@ -151,59 +158,127 @@ paths:
                   properties:
                     id:
                       type: string
-                    id_vendedor:
-                      type: string
-                    id_tienda:
-                      type: string
+                      example: "pub_123abc"
                     id_producto:
                       type: string
+                      example: "prod_456def"
                     titulo:
                       type: string
+                      example: "iPhone 15 Pro Max 256GB"
                     descripcion:
                       type: string
-                    despacho:
-                      type: string
-                      enum:
-                        - retiro_en_tienda
-                        - envio
-                        - ambos
-                    precio_envio:
-                      type: number
-                      nullable: true
-                    estado:
-                      type: string
-                      enum:
-                        - borrador
-                        - en_revision
-                        - activo
-                        - pausado
-                        - vendido
-                        - rechazado
-                        - eliminado
-                    fecha_creacion:
-                      type: string
-                      format: date-time
-                    fecha_modificacion:
-                      type: string
-                      format: date-time
+                      example: "Teléfono en excelente estado, sin rayones"
                     multimedia:
                       type: array
+                      description: Array con solo la primera imagen (ordenada por 'orden')
+                      maxItems: 1
                       items:
                         type: object
                         properties:
                           id:
                             type: string
+                            example: "img_789ghi"
                           url:
                             type: string
-                          cloudinary_public_id:
-                            type: string
-                            nullable: true
+                            format: uri
+                            example: "https://res.cloudinary.com/demo/image/upload/v1234567890/sample.jpg"
                           orden:
                             type: integer
-                          tipo:
-                            type: string
-                            enum: [imagen, video]
-                            default: imagen
+                            example: 0
+                    producto:
+                      type: object
+                      nullable: true
+                      description: Datos del producto obtenidos del microservicio (puede ser null si falla la consulta)
+                      properties:
+                        precio:
+                          type: number
+                          example: 899990
+                        categoria:
+                          type: string
+                          example: "Electrónica"
+                        condicion:
+                          type: string
+                          example: "nuevo"
+                        cantidad:
+                          type: integer
+                          example: 5
+                        marca:
+                          type: string
+                          example: "Apple"
+              examples:
+                success:
+                  summary: Respuesta exitosa con productos
+                  value:
+                    - id: "pub_123abc"
+                      id_producto: "prod_456def"
+                      titulo: "iPhone 15 Pro Max 256GB"
+                      descripcion: "Teléfono en excelente estado"
+                      multimedia:
+                        - id: "img_789ghi"
+                          url: "https://res.cloudinary.com/demo/image/upload/sample.jpg"
+                          orden: 0
+                      producto:
+                        precio: 899990
+                        categoria: "Electrónica"
+                        condicion: "nuevo"
+                        cantidad: 5
+                        marca: "Apple"
+                    - id: "pub_124xyz"
+                      id_producto: "prod_457uvw"
+                      titulo: "Zapatillas Nike Air Max"
+                      descripcion: "Talla 42, usadas pero en buen estado"
+                      multimedia:
+                        - id: "img_790jkl"
+                          url: "https://res.cloudinary.com/demo/image/upload/shoes.jpg"
+                          orden: 0
+                      producto:
+                        precio: 45990
+                        categoria: "Calzado"
+                        condicion: "usado"
+                        cantidad: 1
+                        marca: "Nike"
+                
+                producto_null:
+                  summary: Publicación con producto null (microservicio falló)
+                  value:
+                    - id: "pub_125zzz"
+                      id_producto: "prod_458aaa"
+                      titulo: "PlayStation 5"
+                      descripcion: "Nueva en caja sellada"
+                      multimedia:
+                        - id: "img_791mno"
+                          url: "https://res.cloudinary.com/demo/image/upload/ps5.jpg"
+                          orden: 0
+                      producto: null
+
+                sin_multimedia:
+                  summary: Publicación sin imágenes
+                  value:
+                    - id: "pub_126bbb"
+                      id_producto: "prod_459ccc"
+                      titulo: "Bicicleta de montaña"
+                      descripcion: "Rodado 29, frenos hidráulicos"
+                      multimedia: []
+                      producto:
+                        precio: 250000
+                        categoria: "Deportes"
+                        condicion: "usado"
+                        cantidad: 1
+                        marca: "Trek"
+
+        '500':
+          description: Error del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al listar publicaciones"
+                  error:
+                    type: string
+                    example: "Internal Server Error"
 
   /publicaciones/{id}:
     get:
