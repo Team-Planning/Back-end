@@ -851,3 +851,211 @@ paths:
         '404':
           description: No existe historial para esta publicación
 
+  /publicaciones/cleanup/manual:
+    post:
+      tags:
+        - Publicaciones - Mantenimiento
+      summary: Ejecutar limpieza manual de publicaciones eliminadas
+      description: |
+        Ejecuta manualmente el proceso de limpieza que normalmente se ejecuta automáticamente a las 2:00 AM.
+        Elimina permanentemente publicaciones que llevan más de 30 días en estado "eliminado".
+        
+        **Proceso de limpieza:**
+        1. Busca publicaciones con estado "eliminado" y fecha_eliminacion > 30 días
+        2. Elimina las imágenes asociadas de Cloudinary
+        3. Elimina permanentemente la publicación de la base de datos (incluyendo multimedia y moderaciones por CASCADE)
+        
+        **⚠️ ADVERTENCIA:** Esta acción es IRREVERSIBLE. Las publicaciones eliminadas no se pueden recuperar.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Limpieza ejecutada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Limpieza ejecutada correctamente"
+                  publicacionesEliminadas:
+                    type: integer
+                    example: 15
+                    description: Cantidad de publicaciones eliminadas permanentemente
+              examples:
+                con_publicaciones:
+                  summary: Se eliminaron publicaciones
+                  value:
+                    message: "Limpieza ejecutada correctamente"
+                    publicacionesEliminadas: 15
+                    detalles: "15 publicaciones y 45 imágenes eliminadas permanentemente"
+                
+                sin_publicaciones:
+                  summary: No había publicaciones para eliminar
+                  value:
+                    message: "Limpieza ejecutada correctamente"
+                    publicacionesEliminadas: 0
+                    detalles: "No hay publicaciones para limpiar"
+
+        '401':
+          description: No autorizado - Se requiere autenticación de administrador
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Acceso denegado"
+                  error:
+                    type: string
+                    example: "Unauthorized"
+
+        '403':
+          description: Prohibido - Solo administradores pueden ejecutar esta acción
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "No tienes permisos para ejecutar esta acción"
+                  error:
+                    type: string
+                    example: "Forbidden"
+
+        '500':
+          description: Error del servidor durante la limpieza
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al ejecutar limpieza"
+                  error:
+                    type: string
+                    example: "Internal Server Error"
+
+  /publicaciones/cleanup/stats:
+    get:
+      tags:
+        - Publicaciones - Mantenimiento
+      summary: Obtener estadísticas de publicaciones pendientes de limpieza
+      description: |
+        Muestra información sobre publicaciones que están marcadas como eliminadas y cuántas son elegibles para limpieza permanente (más de 30 días eliminadas).
+        
+        Útil para:
+        - Monitorear el estado de las publicaciones eliminadas
+        - Ver cuántas publicaciones se limpiarán en la próxima ejecución automática
+        - Verificar el espacio que se liberará en Cloudinary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Estadísticas de limpieza
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalEliminadas:
+                    type: integer
+                    description: Total de publicaciones en estado "eliminado"
+                    example: 45
+                  elegiblesParaLimpieza:
+                    type: integer
+                    description: Publicaciones eliminadas hace más de 30 días (se eliminarán en próxima limpieza)
+                    example: 15
+                  imagenesAEliminar:
+                    type: integer
+                    description: Total de imágenes en Cloudinary que se eliminarán
+                    example: 48
+                  proximaLimpieza:
+                    type: string
+                    format: date-time
+                    description: Fecha y hora de la próxima ejecución automática (2:00 AM)
+                    example: "2024-11-28T02:00:00.000Z"
+                  publicacionesDetalle:
+                    type: array
+                    description: Lista detallada de publicaciones elegibles para limpieza
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "pub_123abc"
+                        titulo:
+                          type: string
+                          example: "iPhone 15 Pro"
+                        fecha_eliminacion:
+                          type: string
+                          format: date-time
+                          example: "2024-09-15T10:30:00.000Z"
+                        dias_eliminada:
+                          type: integer
+                          example: 73
+                        cantidad_imagenes:
+                          type: integer
+                          example: 5
+              examples:
+                con_publicaciones:
+                  summary: Hay publicaciones pendientes de limpieza
+                  value:
+                    totalEliminadas: 45
+                    elegiblesParaLimpieza: 15
+                    imagenesAEliminar: 48
+                    proximaLimpieza: "2024-11-28T02:00:00.000Z"
+                    publicacionesDetalle:
+                      - id: "pub_123abc"
+                        titulo: "iPhone 15 Pro"
+                        fecha_eliminacion: "2024-09-15T10:30:00.000Z"
+                        dias_eliminada: 73
+                        cantidad_imagenes: 5
+                      - id: "pub_456def"
+                        titulo: "PlayStation 5"
+                        fecha_eliminacion: "2024-09-20T14:20:00.000Z"
+                        dias_eliminada: 68
+                        cantidad_imagenes: 3
+                
+                sin_publicaciones:
+                  summary: No hay publicaciones para limpiar
+                  value:
+                    totalEliminadas: 10
+                    elegiblesParaLimpieza: 0
+                    imagenesAEliminar: 0
+                    proximaLimpieza: "2024-11-28T02:00:00.000Z"
+                    publicacionesDetalle: []
+
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Acceso denegado"
+
+        '500':
+          description: Error del servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error al obtener estadísticas"
+
+  components:
+    securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+        description: Token JWT de autenticación de administrador
