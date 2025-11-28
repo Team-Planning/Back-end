@@ -80,6 +80,7 @@ export class PublicacionesService {
           id_producto: true,
           titulo: true,
           descripcion: true,
+          estado: true,
           multimedia: {
             select: {
               id: true,
@@ -315,12 +316,7 @@ export class PublicacionesService {
       throw new BadRequestException('Estado inválido');
     }
 
-    if (publicacion.estado === 'eliminado' && estado !== 'eliminado') {
-      throw new BadRequestException(
-        'No se puede cambiar el estado de una publicación eliminada',
-      );
-    }
-
+    // Ahora se permite cambiar el estado aunque sea 'eliminado'
     const actualizada = await this.prisma.publicacion.update({
       where: { id },
       data: { estado },
