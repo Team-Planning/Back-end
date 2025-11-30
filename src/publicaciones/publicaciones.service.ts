@@ -107,7 +107,7 @@ export class PublicacionesService {
     try {
       const whereClause = includeEliminadas 
       ? {} 
-      : { estado: { not: 'eliminado' } };
+      : { estado: 'activo' };
 
       const publicaciones = await this.prisma.publicacion.findMany({
         where: whereClause,
@@ -116,7 +116,6 @@ export class PublicacionesService {
           id_producto: true,
           titulo: true,
           descripcion: true,
-          estado: true,
           multimedia: {
             select: {
               id: true,
@@ -351,12 +350,6 @@ export class PublicacionesService {
     if (!ESTADOS_VALIDOS.includes(estado)) {
       throw new BadRequestException('Estado inválido');
     }
-
-    //if (publicacion.estado === 'eliminado' && estado !== 'eliminado') {
-      //throw new BadRequestException(
-        //'No se puede cambiar el estado de una publicación eliminada',
-      //);
-    //}
 
     const actualizada = await this.prisma.publicacion.update({
       where: { id },
