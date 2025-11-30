@@ -116,6 +116,7 @@ export class PublicacionesService {
           id_producto: true,
           titulo: true,
           descripcion: true,
+          estado: true,
           multimedia: {
             select: {
               id: true,
