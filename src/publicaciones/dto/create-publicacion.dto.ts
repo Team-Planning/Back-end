@@ -41,9 +41,9 @@ export class CreatePublicacionDto {
   @IsOptional()
   id_tienda?: string;
 
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
-  id_producto: string;
+  id_producto: number;
 
   @IsString()
   @IsNotEmpty()

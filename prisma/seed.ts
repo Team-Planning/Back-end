@@ -10,21 +10,21 @@ async function main() {
     {
       id_vendedor: 'vendedor_001',
       id_tienda: 'tienda_001',
-      id_producto: 'producto_001',
+      id_producto: 1,
       titulo: 'Laptop HP Pavilion - Excelente estado',
       descripcion: 'Vendo laptop HP Pavilion 15, procesador Intel Core i5, 8GB RAM, 256GB SSD. En excelente estado, poco uso.',
     },
     {
       id_vendedor: 'vendedor_002',
       id_tienda: 'tienda_002',
-      id_producto: 'producto_002',
+      id_producto: 2,
       titulo: 'Bicicleta MTB Aro 29',
       descripcion: 'Bicicleta de montaña aro 29, marca Trek. Incluye accesorios. Ideal para ciclismo de montaña.',
     },
     {
       id_vendedor: 'vendedor_003',
       id_tienda: 'tienda_003',
-      id_producto: 'producto_003',
+      id_producto: 3,
       titulo: 'Set de herramientas profesional',
       descripcion: 'Set completo de herramientas para mecánica y carpintería. 150 piezas, incluye maletín.',
     },
@@ -34,9 +34,7 @@ async function main() {
   
   for (const pub of publicacionesEjemplo) {
     try {
-      await prisma.publicacion.create({
-        data: pub,
-      });
+      await prisma.publicacion.create({data: pub,});
       console.log(`✓ Publicación creada: ${pub.titulo}`);
     } catch (error) {
       console.log(`- Error o publicación ya existe: ${pub.titulo}`);
