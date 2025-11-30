@@ -8,22 +8,22 @@ async function main() {
   // Publicaciones de ejemplo para el marketplace
   const publicacionesEjemplo = [
     {
-      id_vendedor: 'vendedor_001',
-      id_tienda: 'tienda_001',
+      id_vendedor: 1,
+      id_tienda: 1,
       id_producto: 1,
       titulo: 'Laptop HP Pavilion - Excelente estado',
       descripcion: 'Vendo laptop HP Pavilion 15, procesador Intel Core i5, 8GB RAM, 256GB SSD. En excelente estado, poco uso.',
     },
     {
-      id_vendedor: 'vendedor_002',
-      id_tienda: 'tienda_002',
+      id_vendedor: 2,
+      id_tienda: 2,
       id_producto: 2,
       titulo: 'Bicicleta MTB Aro 29',
       descripcion: 'Bicicleta de montaña aro 29, marca Trek. Incluye accesorios. Ideal para ciclismo de montaña.',
     },
     {
-      id_vendedor: 'vendedor_003',
-      id_tienda: 'tienda_003',
+      id_vendedor: 3,
+      id_tienda: 3,
       id_producto: 3,
       titulo: 'Set de herramientas profesional',
       descripcion: 'Set completo de herramientas para mecánica y carpintería. 150 piezas, incluye maletín.',

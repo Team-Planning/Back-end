@@ -145,7 +145,7 @@ export class PublicacionesService {
     }
   }
 
-  async obtenerPorTienda(id_tienda: string) {
+  async obtenerPorTienda(id_tienda: number) {
     const publicaciones = await this.prisma.publicacion.findMany({
       where: { id_tienda },
       include: {

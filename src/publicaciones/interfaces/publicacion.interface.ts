@@ -1,7 +1,7 @@
 export interface Publicacion {
   id: string;
-  id_vendedor: string;
-  id_tienda: string;
+  id_vendedor: number;
+  id_tienda: number;
   id_producto: number;
 
   titulo: string;

@@ -33,13 +33,13 @@ export class MultimediaDto {
 }
 
 export class CreatePublicacionDto {
-  @IsString()
+  @IsInt()
   @IsNotEmpty()
-  id_vendedor: string;
+  id_vendedor: number;
 
-  @IsString()
+  @IsInt()
   @IsOptional()
-  id_tienda?: string;
+  id_tienda?: number;
 
   @IsInt()
   @IsNotEmpty()
