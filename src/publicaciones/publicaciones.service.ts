@@ -70,8 +70,8 @@ export class PublicacionesService {
 
     const publicacion = await this.prisma.publicacion.create({
       data: {
-        id_vendedor: dto.id_vendedor,
-        id_tienda: dto.id_tienda,
+        id_vendedor: vendedor.id_vendedor,
+        id_tienda: tienda.id_tienda,
         id_producto: dto.id_producto,
         titulo: dto.titulo,
         descripcion: dto.descripcion,

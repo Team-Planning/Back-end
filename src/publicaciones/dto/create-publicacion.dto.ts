@@ -8,7 +8,6 @@ import {
   ValidateNested,
   IsInt,
   Min,
-  IsNumber,
   IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
