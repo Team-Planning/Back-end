@@ -3,7 +3,6 @@ export interface Publicacion {
   id_vendedor: number;
   id_tienda: number;
   id_producto: string;
-  sku: number;
 
   titulo: string;
   descripcion: string;

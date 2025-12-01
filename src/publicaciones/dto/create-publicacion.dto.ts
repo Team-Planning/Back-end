@@ -45,10 +45,6 @@ export class CreatePublicacionDto {
   @IsNotEmpty()
   id_producto: string;
 
-  @IsInt()
-  @IsNotEmpty()
-  sku: number;
-
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
