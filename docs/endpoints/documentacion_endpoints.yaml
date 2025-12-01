@@ -23,118 +23,123 @@ tags:
 
 paths:
   /publicaciones:
-    post:
-      tags:
-        - Publicaciones
-      summary: Crear una nueva publicación
-      description: Crea una publicación con estado inicial "en_revision"
-      requestBody:
-        required: true
+  post:
+    tags:
+      - Publicaciones
+    summary: Crear una nueva publicación
+    description: >
+      Crea una nueva publicación. El ID de la tienda y el ID del vendedor se obtienen automáticamente desde otros microservicios.
+      El estado inicial siempre será `en_revision`.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - id_producto
+              - titulo
+              - descripcion
+            properties:
+              id_producto:
+                type: string
+                description: ID del producto (referencia externa al microservicio de productos)
+              titulo:
+                type: string
+                minLength: 5
+                maxLength: 100
+                description: Título de la publicación
+              descripcion:
+                type: string
+                minLength: 10
+                maxLength: 1000
+                description: Descripción detallada de la publicación
+              multimedia:
+                type: array
+                maxItems: 6
+                description: Lista de archivos multimedia relacionados (máximo 6)
+                items:
+                  type: object
+                  required:
+                    - url
+                    - orden
+                  properties:
+                    url:
+                      type: string
+                      description: URL de la imagen o video
+                    cloudinary_public_id:
+                      type: string
+                      nullable: true
+                      description: Public ID de Cloudinary para permitir su eliminación
+                    orden:
+                      type: integer
+                      minimum: 0
+                      description: Orden en el carrusel
+                    tipo:
+                      type: string
+                      enum: [imagen, video]
+                      default: imagen
+                      description: Tipo de archivo multimedia
+          example:
+            id_producto: "producto_ABC123"
+            titulo: "iPhone 13 Pro"
+            descripcion: "Nuevo en caja, 256GB"
+            multimedia:
+              - url: "https://res.cloudinary.com/demo/image.jpg"
+                cloudinary_public_id: "demo/image"
+                orden: 1
+                tipo: "imagen"
+
+    responses:
+      '201':
+        description: Publicación creada exitosamente
         content:
           application/json:
             schema:
               type: object
-              required:
-                - id_vendedor
-                - id_tienda
-                - id_producto
-                - titulo
-                - descripcion
               properties:
-                id_vendedor:
+                id:
                   type: string
-                  description: ID del vendedor (referencia externa desde el microservicio de productos)
                 id_producto:
                   type: string
-                  description: ID del producto (referencia externa desde el microservicio de productos)
+                id_vendedor:
+                  type: number
+                id_tienda:
+                  type: number
                 titulo:
                   type: string
-                  description: Título de la publicación
-                  minLength: 5
-                  maxLength: 100
                 descripcion:
                   type: string
-                  description: Descripción detallada
-                  minLength: 10
-                  maxLength: 1000
-                despacho:
+                estado:
                   type: string
-                  enum:
-                    - retiro_en_tienda
-                    - envio
-                    - ambos
-                  default: retiro_en_tienda
-                  description: Método de entrega disponible para la publicación
-                precio_envio:
-                  type: number
-                  minimum: 0
-                  nullable: true
-                  description: Costo del envío si aplica
+                  example: "en_revision"
                 multimedia:
                   type: array
-                  maxItems: 6
-                  description: Lista de archivos multimedia relacionados (máximo 6)
                   items:
                     type: object
-                    required:
-                      - url
-                      - orden
                     properties:
                       url:
                         type: string
                       cloudinary_public_id:
                         type: string
                         nullable: true
-                        description: Public ID de Cloudinary para eliminación
                       orden:
                         type: integer
-                        minimum: 0
                       tipo:
                         type: string
-                        enum: [imagen, video]
-                        default: imagen
-            example:
-              id_vendedor: "vendedor_001"
-              id_tienda: "tienda_123"
-              id_producto: "producto_ABC123"
-              titulo: "iPhone 13 Pro"
-              descripcion: "Nuevo en caja, 256GB"
-              despacho: "envio"
-              precio_envio: 5990
-              multimedia:
-                - url: "https://res.cloudinary.com/demo/image.jpg"
-                  cloudinary_public_id: "demo/image"
-                  orden: 1
-                  tipo: "imagen"
-
-      responses:
-        '201':
-          description: Publicación creada exitosamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  mensaje:
-                    type: string
-                    example: "Publicación creada exitosamente"
-                  id:
-                    type: string
-                  id_producto:
-                    type: string
-        '400':
-          description: Datos inválidos
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  statusCode:
-                    type: integer
-                  message:
-                    type: string
-                  error:
-                    type: string
+      '400':
+        description: Datos inválidos o error al obtener tienda/vendedor
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                statusCode:
+                  type: integer
+                message:
+                  type: string
+                error:
+                  type: string
 
     get:
       tags:
