@@ -73,6 +73,7 @@ export class PublicacionesService {
         id_vendedor: dto.id_vendedor,
         id_tienda: dto.id_tienda,
         id_producto: dto.id_producto,
+        sku: dto.sku,
         titulo: dto.titulo,
         descripcion: dto.descripcion,
         estado: 'en_revision', // Siempre inicia en revisión

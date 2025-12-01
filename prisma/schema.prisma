@@ -15,7 +15,8 @@ model publicacion {
   id                  String        @id @default(auto()) @map("_id") @db.ObjectId
   id_vendedor         Int           // ID del vendedor (referencia externa a otro microservicio)
   id_tienda           Int?          // ID de la tienda (referencia externa al microservicio de tiendas) - Opcional temporalmente
-  id_producto         Int           // ID del producto (referencia externa al microservicio de productos)
+  id_producto         String        // ID del producto (referencia externa al microservicio de productos)
+  sku                 Int           // SKU del producto
   titulo              String
   descripcion         String
   estado              String        @default("en_revision") // Estados: "borrador", "en_revision", "activo", "pausado", "vendido", "rechazado", "eliminado"
