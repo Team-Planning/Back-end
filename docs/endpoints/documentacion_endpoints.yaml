@@ -142,247 +142,263 @@ paths:
                   type: string
 
     get:
-      tags:
-        - Publicaciones
-      summary: Listar todas las publicaciones
-      description: Obtiene todas las publicaciones (excepto eliminadas por defecto) con su primera imagen y datos del producto
-      parameters:
-        - in: query
-          name: includeEliminadas
+  tags:
+    - Publicaciones
+  summary: Listar todas las publicaciones
+  description: Obtiene todas las publicaciones (excepto eliminadas/inactivas por defecto) con su primera imagen (orden=0) y datos enriquecidos del producto, obtenidos desde un microservicio.
+  parameters:
+    - in: query
+      name: includeEliminadas
+      schema:
+        type: boolean
+        default: false
+      description: Si es true, incluye publicaciones eliminadas o inactivas (todas). Si es false (por defecto), solo incluye las que tienen estado='activo'.
+  responses:
+    '200':
+      description: Lista de publicaciones con datos enriquecidos del microservicio de productos
+      content:
+        application/json:
           schema:
-            type: boolean
-            default: false
-          description: Si es true, incluye publicaciones eliminadas
-      responses:
-        '200':
-          description: Lista de publicaciones con datos enriquecidos del microservicio de productos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: "pub_123abc"
+                  description: ID único de la publicación.
+                id_producto:
+                  type: string
+                  example: "prod_456def"
+                  description: ID del producto asociado a esta publicación.
+                titulo:
+                  type: string
+                  example: "iPhone 15 Pro Max 256GB"
+                descripcion:
+                  type: string
+                  example: "Teléfono en excelente estado, sin rayones"
+                multimedia:
+                  type: array
+                  description: Array con solo la primera imagen (orden ascendente), o array vacío si no hay.
+                  maxItems: 1
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        format: uri
+                        example: "https://res.cloudinary.com/demo/image/upload/v1234567890/sample.jpg"
+                      # El campo 'orden' y 'id' no se incluyen en el 'select' de tu código.
+                producto:
                   type: object
+                  nullable: true
+                  description: Datos enriquecidos del producto obtenidos del microservicio (puede ser null si falla la consulta al microservicio).
+                  properties:
+                    precio:
+                      type: number
+                      example: 899990
+                    categoria:
+                      type: string
+                      example: "Electrónica"
+                    condicion:
+                      type: string
+                      example: "nuevo"
+                    stock: # En tu código, el parámetro 'stock' se pide, no 'cantidad'.
+                      type: integer
+                      example: 5
+                      description: Cantidad/Stock del producto.
+                    marca:
+                      type: string
+                      example: "Apple"
+          examples:
+            success:
+              summary: Respuesta exitosa con productos
+              value:
+                - id: "pub_123abc"
+                  id_producto: "prod_456def"
+                  titulo: "iPhone 15 Pro Max 256GB"
+                  descripcion: "Teléfono en excelente estado"
+                  multimedia:
+                    - url: "https://res.cloudinary.com/demo/image/upload/sample.jpg"
+                  producto:
+                    precio: 899990
+                    categoria: "Electrónica"
+                    condicion: "nuevo"
+                    stock: 5
+                    marca: "Apple"
+            producto_null:
+              summary: Publicación con producto null (microservicio falló)
+              value:
+                - id: "pub_125zzz"
+                  id_producto: "prod_458aaa"
+                  titulo: "PlayStation 5"
+                  descripcion: "Nueva en caja sellada"
+                  multimedia:
+                    - url: "https://res.cloudinary.com/demo/image/upload/ps5.jpg"
+                  producto: null
+    '500':
+      description: Error del servidor
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Error en listarTodas: [Detalles del error]"
+              error:
+                type: string
+                example: "Internal Server Error"
+
+  /publicaciones/{id}:
+  get:
+    tags:
+      - Publicaciones
+    summary: Obtener publicación por ID
+    description: Obtiene los detalles completos de una publicación incluyendo multimedia, moderaciones, datos enriquecidos del producto (filtrados) y reseñas asociadas.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ID único de la publicación
+        schema:
+          type: string
+        example: "507f1f77bcf86cd799439011"
+    responses:
+      '200':
+        description: Publicación encontrada y enriquecida
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                id_vendedor:
+                  type: string
+                id_tienda:
+                  type: string
+                id_producto:
+                  type: string
+                titulo:
+                  type: string
+                descripcion:
+                  type: string
+                despacho:
+                  type: string
+                  enum:
+                    - retiro_en_tienda
+                    - envio
+                    - ambos
+                precio_envio:
+                  type: number
+                  nullable: true
+                estado:
+                  type: string
+                  enum:
+                    - borrador
+                    - en_revision
+                    - activo
+                    - pausado
+                    - vendido
+                    - rechazado
+                    - eliminado
+                fecha_creacion:
+                  type: string
+                  format: date-time
+                fecha_modificacion:
+                  type: string
+                  format: date-time
+                
+                multimedia:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      url:
+                        type: string
+                      cloudinary_public_id:
+                        type: string
+                        nullable: true
+                      orden:
+                        type: integer
+                      tipo:
+                        type: string
+                        enum: [imagen, video]
+                
+                moderaciones:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      id_moderador:
+                        type: string
+                        nullable: true
+                      accion:
+                        type: string
+                        enum: [aprobado, rechazado]
+                      comentario:
+                        type: string
+                      fecha:
+                        type: string
+                        format: date-time
+                
+                producto:
+                  type: object
+                  nullable: true
+                  description: Datos del producto obtenidos del microservicio (null si falla la consulta).
                   properties:
                     id:
                       type: string
-                      example: "pub_123abc"
-                    id_producto:
+                      description: ID del producto (asumiendo que el microservicio lo devuelve).
+                    nombre:
                       type: string
-                      example: "prod_456def"
-                    titulo:
+                      example: "Teclado mecánico RGB"
+                    stock:
+                      type: integer
+                      example: 10
+                    costo:
+                      type: number
+                      example: 50.00
+                    condicion:
                       type: string
-                      example: "iPhone 15 Pro Max 256GB"
+                      example: "nuevo"
+                    marca:
+                      type: string
+                      example: "Razer"
+                    categoria:
+                      type: string
+                      example: "Periféricos"
                     descripcion:
                       type: string
-                      example: "Teléfono en excelente estado, sin rayones"
-                    multimedia:
-                      type: array
-                      description: Array con solo la primera imagen (ordenada por 'orden')
-                      maxItems: 1
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            example: "img_789ghi"
-                          url:
-                            type: string
-                            format: uri
-                            example: "https://res.cloudinary.com/demo/image/upload/v1234567890/sample.jpg"
-                          orden:
-                            type: integer
-                            example: 0
-                    producto:
-                      type: object
-                      nullable: true
-                      description: Datos del producto obtenidos del microservicio (puede ser null si falla la consulta)
-                      properties:
-                        precio:
-                          type: number
-                          example: 899990
-                        categoria:
-                          type: string
-                          example: "Electrónica"
-                        condicion:
-                          type: string
-                          example: "nuevo"
-                        cantidad:
-                          type: integer
-                          example: 5
-                        marca:
-                          type: string
-                          example: "Apple"
-              examples:
-                success:
-                  summary: Respuesta exitosa con productos
-                  value:
-                    - id: "pub_123abc"
-                      id_producto: "prod_456def"
-                      titulo: "iPhone 15 Pro Max 256GB"
-                      descripcion: "Teléfono en excelente estado"
-                      multimedia:
-                        - id: "img_789ghi"
-                          url: "https://res.cloudinary.com/demo/image/upload/sample.jpg"
-                          orden: 0
-                      producto:
-                        precio: 899990
-                        categoria: "Electrónica"
-                        condicion: "nuevo"
-                        cantidad: 5
-                        marca: "Apple"
-                    - id: "pub_124xyz"
-                      id_producto: "prod_457uvw"
-                      titulo: "Zapatillas Nike Air Max"
-                      descripcion: "Talla 42, usadas pero en buen estado"
-                      multimedia:
-                        - id: "img_790jkl"
-                          url: "https://res.cloudinary.com/demo/image/upload/shoes.jpg"
-                          orden: 0
-                      producto:
-                        precio: 45990
-                        categoria: "Calzado"
-                        condicion: "usado"
-                        cantidad: 1
-                        marca: "Nike"
+                      example: "Descripción completa del producto en el microservicio."
                 
-                producto_null:
-                  summary: Publicación con producto null (microservicio falló)
-                  value:
-                    - id: "pub_125zzz"
-                      id_producto: "prod_458aaa"
-                      titulo: "PlayStation 5"
-                      descripcion: "Nueva en caja sellada"
-                      multimedia:
-                        - id: "img_791mno"
-                          url: "https://res.cloudinary.com/demo/image/upload/ps5.jpg"
-                          orden: 0
-                      producto: null
-
-                sin_multimedia:
-                  summary: Publicación sin imágenes
-                  value:
-                    - id: "pub_126bbb"
-                      id_producto: "prod_459ccc"
-                      titulo: "Bicicleta de montaña"
-                      descripcion: "Rodado 29, frenos hidráulicos"
-                      multimedia: []
-                      producto:
-                        precio: 250000
-                        categoria: "Deportes"
-                        condicion: "usado"
-                        cantidad: 1
-                        marca: "Trek"
-
-        '500':
-          description: Error del servidor
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Error al listar publicaciones"
-                  error:
-                    type: string
-                    example: "Internal Server Error"
-
-  /publicaciones/{id}:
-    get:
-      tags:
-        - Publicaciones
-      summary: Obtener publicación por ID
-      description: Obtiene los detalles completos de una publicación incluyendo multimedia y moderaciones
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: ID único de la publicación
-          schema:
-            type: string
-          example: "507f1f77bcf86cd799439011"
-      responses:
-        '200':
-          description: Publicación encontrada
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  id_vendedor:
-                    type: string
-                  id_tienda:
-                    type: string
-                  id_producto:
-                    type: string
-                  titulo:
-                    type: string
-                  descripcion:
-                    type: string
-                  despacho:
-                    type: string
-                    enum:
-                      - retiro_en_tienda
-                      - envio
-                      - ambos
-                  precio_envio:
-                    type: number
-                    nullable: true
-                  estado:
-                    type: string
-                    enum:
-                      - borrador
-                      - en_revision
-                      - activo
-                      - pausado
-                      - vendido
-                      - rechazado
-                      - eliminado
-                  fecha_creacion:
-                    type: string
-                    format: date-time
-                  fecha_modificacion:
-                    type: string
-                    format: date-time
-                  multimedia:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        url:
-                          type: string
-                        cloudinary_public_id:
-                          type: string
-                          nullable: true
-                        orden:
-                          type: integer
-                        tipo:
-                          type: string
-                          enum: [imagen, video]
-                  moderaciones:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        id_moderador:
-                          type: string
-                          nullable: true
-                        accion:
-                          type: string
-                          enum: [aprobado, rechazado]
-                        comentario:
-                          type: string
-                        fecha:
-                          type: string
-                          format: date-time
-        '404':
-          description: Publicación no encontrada
+                reseñas:
+                  type: array
+                  description: Lista de reseñas/ratings asociados al producto.
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "rev_abc123"
+                      rating:
+                        type: number
+                        example: 5
+                      comentario:
+                        type: string
+                        nullable: true
+                        example: "Excelente producto."
+                      fecha:
+                        type: string
+                        format: date-time
+                        
+      '404':
+        description: Publicación no encontrada
 
     put:
       tags:

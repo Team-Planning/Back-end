@@ -107,17 +107,27 @@ export class PublicacionesService {
     try {
       const whereClause = includeEliminadas 
         ? {} 
-        : { estado: { not: 'eliminado' } };
+        : { estado: 'activo' };
 
       const publicaciones = await this.prisma.publicacion.findMany({
         where: whereClause,
-        include: {
-          multimedia: {
-            orderBy: { orden: 'asc' },
-          },
-        },
         orderBy: {
           fecha_creacion: 'desc',
+        },
+        select: {
+          id: true,
+          id_producto: true,
+          titulo: true,
+          descripcion: true,
+          multimedia: {
+            orderBy: {
+              orden: 'asc',
+            },
+            take: 1,
+            select: {
+              url: true
+            }
+          }
         },
       });
 
@@ -125,10 +135,12 @@ export class PublicacionesService {
       const publicacionesEnriquecidas = await Promise.all(
         publicaciones.map(async (pub) => {
           try {
-            const producto = await this.httpService.axiosRef
-              .get(`http://localhost:16014/api/productos/${pub.id_producto}`)
-              .then(res => res.data)
-              .catch(() => null);
+            const producto = await this.httpService.axiosRef.get(
+              `http://localhost:16014/api/productos/${pub.id_producto}`, 
+              { params: { fields: 'costo,categoria,condicion,stock,marca' } }
+            )
+            .then(res => res.data)
+            .catch(() => null);
 
             return { ...pub, producto };
           } catch (error) {
@@ -194,34 +206,29 @@ export class PublicacionesService {
         throw new NotFoundException(`Publicación con ID ${id} no encontrada`);
       }
 
-      // Obtener datos del microservicio de productos (con manejo de errores)
-      let producto = null;
-      try {
-        producto = await this.httpService.axiosRef
-          .get(`http://localhost:16014/api/productos/${publicacion.id_producto}`, { timeout: 3000 })
-          .then((res) => res.data)
-          .catch((err) => {
-            console.log(`Microservicio de productos no disponible:`, err.message);
-            return null;
-          });
-      } catch (error) {
-        console.log('Error al obtener producto:', error.message);
-      }
+      let producto = await this.httpService.axiosRef
+        .get(
+          `http://localhost:16014/api/productos/${publicacion.id_producto}`, 
+          { 
+            timeout: 3000,
+            params: { fields: 'nombre,stock,costo,condicion,marca,categoria,descripcion' }
+          }
+        )
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(`Microservicio de productos no disponible:`, err.message);
+          return null;
+        });
 
-      // Obtener datos del microservicio de reseñas (con manejo de errores)
       let reseñas = [];
       if (producto?.id) {
-        try {
-          reseñas = await this.httpService.axiosRef
-            .get(`http://localhost:3500/ratings/publicacion/${producto.id}`, { timeout: 3000 })
-            .then((res) => res.data)
-            .catch((err) => {
-              console.log(`Microservicio de reseñas no disponible:`, err.message);
-              return [];
-            });
-        } catch (error) {
-          console.log('Error al obtener reseñas:', error.message);
-        }
+        reseñas = await this.httpService.axiosRef
+          .get(`http://localhost:3500/ratings/publicacion/${producto.id}`, { timeout: 3000 })
+          .then((res) => res.data)
+          .catch((err) => {
+            console.log(`Microservicio de reseñas no disponible:`, err.message);
+            return [];
+          });
       }
 
       return {
