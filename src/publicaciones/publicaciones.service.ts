@@ -328,8 +328,6 @@ export class PublicacionesService {
   }
 
   async cambiarEstado(id: string, estado: EstadoPublicacion) {
-    const publicacion = await this.obtenerPorId(id);
-
     if (!ESTADOS_VALIDOS.includes(estado)) {
       throw new BadRequestException('Estado inválido');
     }
