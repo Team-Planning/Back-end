@@ -118,20 +118,17 @@ export class ModeracionService {
       for (const palabraProhibida of listaPalabras) {
         const palabraNorm = this.normalizar(palabraProhibida);
         
-        if (textoNorm.includes(palabraNorm)) {
-          detectadas.set(palabraProhibida, categoria);
-          continue;
-        }
-
+        // Solo buscar palabras completas, no subcadenas
         for (const palabraTexto of palabrasTexto) {
+          // Coincidencia exacta
           if (palabraTexto === palabraNorm) {
             detectadas.set(palabraProhibida, categoria);
             break;
           }
-        }
 
-        if (palabraProhibida.length >= 5) {
-          for (const palabraTexto of palabrasTexto) {
+          // Coincidencia difusa solo para palabras largas (>= 5 caracteres)
+          // y con longitud similar
+          if (palabraProhibida.length >= 5) {
             if (Math.abs(palabraTexto.length - palabraNorm.length) <= 2) {
               if (this.esSimilar(palabraTexto, palabraNorm)) {
                 detectadas.set(palabraProhibida, categoria);

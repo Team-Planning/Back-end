@@ -34,44 +34,54 @@ export class PublicacionesService {
   async crear(dto: CreatePublicacionDto) {
     const modoPrueba = 'true';
 
-    // Obtener tienda
-    let tienda: { id_tienda: number } | null = null;
-    try {
-      const response = await this.httpService.axiosRef.get(
-        `http://localhost:16014/api/productos/${dto.id_producto}`,
-        { params: { fields: 'id_tienda' } }
-      );
-      tienda = { id_tienda: response.data.id_tienda };
-    } catch (error) {
-      if (!modoPrueba) {
-        throw new BadRequestException(
-          `No se pudo obtener la tienda para el producto con ID ${dto.id_producto}: ${error.message}`
-        );
-      }
-      tienda = { id_tienda: 1 };
-    }
+    // Si ya vienen id_vendedor e id_tienda, usarlos directamente
+    let finalIdVendedor = dto.id_vendedor;
+    let finalIdTienda = dto.id_tienda;
 
-    // Obtener vendedor
-    let vendedor: { id_vendedor: number } | null = null;
-    try {
-      const response = await this.httpService.axiosRef.get(
-        `http://localhost:16014/api/tiendas/${tienda.id_tienda}`,
-        { params: { fields: 'id_vendedor' } }
-      );
-      vendedor = { id_vendedor: response.data.id_vendedor };
-    } catch (error) {
-      if (!modoPrueba) {
-        throw new BadRequestException(
-          `No se pudo obtener el vendedor para la tienda con ID ${tienda.id_tienda}: ${error.message}`
+    // Si no vienen, intentar obtenerlos del microservicio
+    if (!finalIdVendedor || !finalIdTienda) {
+      // Obtener tienda
+      let tienda: { id_tienda: number } | null = null;
+      try {
+        const response = await this.httpService.axiosRef.get(
+          `http://localhost:16014/api/productos/${dto.id_producto}`,
+          { params: { fields: 'id_tienda' } }
         );
+        tienda = { id_tienda: response.data.id_tienda };
+      } catch (error) {
+        if (!modoPrueba) {
+          throw new BadRequestException(
+            `No se pudo obtener la tienda para el producto con ID ${dto.id_producto}: ${error.message}`
+          );
+        }
+        tienda = { id_tienda: 1 };
       }
-      vendedor = { id_vendedor: 1 };
+
+      // Obtener vendedor
+      let vendedor: { id_vendedor: number } | null = null;
+      try {
+        const response = await this.httpService.axiosRef.get(
+          `http://localhost:16014/api/tiendas/${tienda.id_tienda}`,
+          { params: { fields: 'id_vendedor' } }
+        );
+        vendedor = { id_vendedor: response.data.id_vendedor };
+      } catch (error) {
+        if (!modoPrueba) {
+          throw new BadRequestException(
+            `No se pudo obtener el vendedor para la tienda con ID ${tienda.id_tienda}: ${error.message}`
+          );
+        }
+        vendedor = { id_vendedor: 1 };
+      }
+
+      finalIdVendedor = vendedor.id_vendedor;
+      finalIdTienda = tienda.id_tienda;
     }
 
     const publicacion = await this.prisma.publicacion.create({
       data: {
-        id_vendedor: vendedor.id_vendedor,
-        id_tienda: tienda.id_tienda,
+        id_vendedor: finalIdVendedor,
+        id_tienda: finalIdTienda,
         id_producto: dto.id_producto,
         titulo: dto.titulo,
         descripcion: dto.descripcion,
@@ -119,6 +129,7 @@ export class PublicacionesService {
           id_producto: true,
           titulo: true,
           descripcion: true,
+          estado: true,
           multimedia: {
             orderBy: {
               orden: 'asc',
