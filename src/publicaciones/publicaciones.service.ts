@@ -49,15 +49,12 @@ export class PublicacionesService {
         );
         tienda = { id_tienda: response.data.id_tienda };
       } catch (error) {
-        if (!modoPrueba) {
-          throw new BadRequestException(
-            `No se pudo obtener la tienda para el producto con ID ${dto.id_producto}: ${error.message}`
-          );
-        }
-        tienda = { id_tienda: 1 };
+        console.warn(
+          `No se pudo obtener la tienda para el producto con ID ${dto.id_producto}: ${error.message}. Usando valor predeterminado.`
+        );
+        tienda = { id_tienda: 1 }; // Valor predeterminado
       }
 
-      // Obtener vendedor
       let vendedor: { id_vendedor: number } | null = null;
       try {
         const response = await this.httpService.axiosRef.get(
@@ -66,37 +63,41 @@ export class PublicacionesService {
         );
         vendedor = { id_vendedor: response.data.id_vendedor };
       } catch (error) {
-        if (!modoPrueba) {
-          throw new BadRequestException(
-            `No se pudo obtener el vendedor para la tienda con ID ${tienda.id_tienda}: ${error.message}`
-          );
-        }
-        vendedor = { id_vendedor: 1 };
+        console.warn(
+          `No se pudo obtener el vendedor para la tienda con ID ${tienda.id_tienda}: ${error.message}. Usando valor predeterminado.`
+        );
+        vendedor = { id_vendedor: 1 }; // Valor predeterminado
       }
 
       finalIdVendedor = vendedor.id_vendedor;
       finalIdTienda = tienda.id_tienda;
     }
 
+    const data: any = {
+      id_vendedor: finalIdVendedor,
+      id_tienda: finalIdTienda,
+      id_producto: dto.id_producto,
+      titulo: dto.titulo,
+      descripcion: dto.descripcion,
+      estado: 'en_revision', // Siempre inicia en revisión
+      multimedia: dto.multimedia
+        ? {
+            create: dto.multimedia.map((m) => ({
+              url: m.url,
+              orden: m.orden,
+              tipo: m.tipo || 'imagen',
+              cloudinary_public_id: m.cloudinary_public_id ?? null,
+            })),
+          }
+        : undefined,
+    };
+
+    if (dto.precio !== undefined) {
+      data.precio = dto.precio;
+    }
+
     const publicacion = await this.prisma.publicacion.create({
-      data: {
-        id_vendedor: finalIdVendedor,
-        id_tienda: finalIdTienda,
-        id_producto: dto.id_producto,
-        titulo: dto.titulo,
-        descripcion: dto.descripcion,
-        estado: 'en_revision', // Siempre inicia en revisión
-        multimedia: dto.multimedia
-          ? {
-              create: dto.multimedia.map((m) => ({
-                url: m.url,
-                orden: m.orden,
-                tipo: m.tipo || 'imagen',
-                cloudinary_public_id: m.cloudinary_public_id ?? null,
-              })),
-            }
-          : undefined,
-      },
+      data,
       include: {
         multimedia: {
           orderBy: { orden: 'asc' },
@@ -335,6 +336,26 @@ export class PublicacionesService {
     return publicacion;
   }
 
+  async actualizarOrdenMultimedia(idPublicacion: string, orden: string[]) {
+    // Verificar que la publicación existe
+    await this.obtenerPorId(idPublicacion);
+
+    // Actualizar el orden de cada imagen
+    const updates = orden.map((multimediaId, index) => 
+      this.prisma.multimedia.update({
+        where: { id: multimediaId },
+        data: { orden: index },
+      })
+    );
+
+    await Promise.all(updates);
+
+    return { 
+      mensaje: 'Orden actualizado exitosamente',
+      orden 
+    };
+  }
+
   async eliminar(id: string) {
     const publicacion = await this.obtenerPorId(id);
 
@@ -380,7 +401,7 @@ export class PublicacionesService {
         const result = await this.cloudinaryService.deleteMultipleImages(imagenesConPublicId);
         console.log(`Imágenes eliminadas de Cloudinary: ${result.deleted.length}`);
         if (result.errors.length > 0) {
-          console.error(`Errores al eliminar imágenes: ${result.errors.join(', ')}`);
+          throw new Error('Validation failed');
         }
       } catch (error) {
         console.error(`Error al eliminar imágenes de Cloudinary: ${error.message}`);

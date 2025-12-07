@@ -64,6 +64,6 @@ export class CreatePublicacionDto {
 
   @IsInt()
   @Min(0)
-  @IsOptional()
-  precio?: number;
+  @IsNotEmpty()
+  precio: number;
 }

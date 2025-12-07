@@ -72,6 +72,15 @@ export class PublicacionesController {
     return this.publicacionesService.cambiarEstado(id, estado);
   }
 
+  @Patch(':id/multimedia/orden')
+  @HttpCode(HttpStatus.OK)
+  async actualizarOrdenMultimedia(
+    @Param('id') id: string,
+    @Body('orden') orden: string[] // Array de IDs en el orden deseado
+  ) {
+    return this.publicacionesService.actualizarOrdenMultimedia(id, orden);
+  }
+
   @Delete('multimedia/:multimediaId')
     @HttpCode(HttpStatus.OK)
     async eliminarMultimedia(@Param('multimediaId') multimediaId: string) {
