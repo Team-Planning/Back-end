@@ -3,7 +3,8 @@ import {
   IsOptional,
   MaxLength,
   MinLength,
-  IsIn
+  IsIn,
+  IsNumber
 } from 'class-validator';
 
 export class UpdatePublicacionDto {
@@ -31,4 +32,8 @@ export class UpdatePublicacionDto {
     'eliminado'
   ])
   estado?: string;
+
+  @IsOptional()
+  @IsNumber()
+  precio?: number;
 }

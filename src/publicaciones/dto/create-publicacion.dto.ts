@@ -61,4 +61,9 @@ export class CreatePublicacionDto {
   @ValidateNested({ each: true })
   @Type(() => MultimediaDto)
   multimedia?: MultimediaDto[];
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  precio?: number;
 }

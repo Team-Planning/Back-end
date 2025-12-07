@@ -108,7 +108,7 @@ export class ModeracionService {
   } {
     const textoNorm = this.normalizar(texto);
     const palabrasTexto = textoNorm.split(' ');
-    
+
     const detectadas = new Map<string, string>();
 
     if (palabrasTexto.some(p => this.palabrasExcluidas.has(p))) {
@@ -117,7 +117,7 @@ export class ModeracionService {
     for (const [categoria, listaPalabras] of Object.entries(this.palabrasProhibidas)) {
       for (const palabraProhibida of listaPalabras) {
         const palabraNorm = this.normalizar(palabraProhibida);
-        
+
         // Solo buscar palabras completas, no subcadenas
         for (const palabraTexto of palabrasTexto) {
           // Coincidencia exacta
@@ -226,7 +226,7 @@ export class ModeracionService {
     categorias: string[];
   } {
     const { palabrasEncontradas, categorias } = this.detectarPalabrasProhibidas(texto);
-    
+
     return {
       limpio: palabrasEncontradas.length === 0,
       palabrasEncontradas,

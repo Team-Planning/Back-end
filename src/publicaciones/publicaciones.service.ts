@@ -130,6 +130,7 @@ export class PublicacionesService {
           titulo: true,
           descripcion: true,
           estado: true,
+          precio: true, // Incluir el campo precio en las consultas
           multimedia: {
             orderBy: {
               orden: 'asc',
@@ -256,11 +257,34 @@ export class PublicacionesService {
     }
   }
 
+  private contienePalabrasInapropiadas(texto: string): boolean {
+    const palabrasProhibidas = ['mala', 'prohibida', 'inapropiada']; // Lista de palabras prohibidas
+    const regex = new RegExp(`\\b(${palabrasProhibidas.join('|')})\\b`, 'i');
+    return regex.test(texto);
+  }
+
   async actualizar(id: string, dto: UpdatePublicacionDto) {
     // Verificar que la publicación existe
     const existente = await this.obtenerPorId(id);
 
     const data: any = {};
+    let needsRemoderation = false;
+
+    // Validar palabras inapropiadas en título y descripción
+    if (dto.titulo && this.contienePalabrasInapropiadas(dto.titulo)) {
+      data.estado = 'rechazado';
+    }
+
+    if (dto.descripcion && this.contienePalabrasInapropiadas(dto.descripcion)) {
+      data.estado = 'rechazado';
+    }
+
+    // Si se actualiza título o descripción y la publicación estaba rechazada o activa
+    if ((dto.titulo !== undefined || dto.descripcion !== undefined) && 
+        (existente.estado === 'rechazado' || existente.estado === 'activo')) {
+      needsRemoderation = true;
+      data.estado = 'en_revision'; // Cambiar a en revisión para remoderar
+    }
 
     if (dto.titulo !== undefined) data.titulo = dto.titulo;
     if (dto.descripcion !== undefined) data.descripcion = dto.descripcion;
@@ -278,17 +302,35 @@ export class PublicacionesService {
         );
       }
       data.estado = dto.estado;
+      needsRemoderation = false; // Si se establece manualmente el estado, no remoderar
+    }
+
+    if (dto.precio !== undefined) {
+      data.precio = dto.precio;
     }
 
     const publicacion = await this.prisma.publicacion.update({
       where: { id },
-      data,
+      data: {
+        ...data, // Usar el objeto data para incluir los campos procesados
+      },
       include: {
         multimedia: {
           orderBy: { orden: 'asc' },
         },
       },
     });
+
+    // Si se necesita remoderar, ejecutar moderación automática
+    if (needsRemoderation) {
+      await this.moderacionService.moderarPublicacion(
+        publicacion.id,
+        publicacion.titulo,
+        publicacion.descripcion,
+      );
+      // Obtener la publicación actualizada con el nuevo estado
+      return this.obtenerPorId(id);
+    }
 
     return publicacion;
   }
@@ -299,6 +341,18 @@ export class PublicacionesService {
     if (publicacion.estado === 'eliminado') {
       throw new BadRequestException('La publicación ya está eliminada');
     }
+
+    // Guardar el estado anterior en el historial de moderación
+    await this.prisma.moderacion.create({
+      data: {
+        id_publicacion: id,
+        tipo_moderacion: 'sistema',
+        accion: 'estado_previo',
+        motivo: `Estado previo a eliminación: ${publicacion.estado}`,
+        palabras_detectadas: [],
+        contenido_detectado: [],
+      },
+    });
 
     // Marcar como eliminado y guardar la fecha de eliminación
     await this.prisma.publicacion.update({
@@ -350,9 +404,33 @@ export class PublicacionesService {
       throw new BadRequestException('Estado inválido');
     }
 
+    const publicacion = await this.obtenerPorId(id);
+    let estadoFinal = estado;
+
+    // Si se está restaurando una publicación eliminada, recuperar el estado previo
+    if (publicacion.estado === 'eliminado' && estado === 'activo') {
+      const moderaciones = await this.prisma.moderacion.findMany({
+        where: { 
+          id_publicacion: id,
+          accion: 'estado_previo'
+        },
+        orderBy: { fecha: 'desc' },
+        take: 1,
+      });
+
+      if (moderaciones.length > 0) {
+        // Extraer el estado previo del motivo
+        const motivo = moderaciones[0].motivo;
+        const match = motivo.match(/Estado previo a eliminación: (\w+)/);
+        if (match && match[1]) {
+          estadoFinal = match[1] as EstadoPublicacion;
+        }
+      }
+    }
+
     const actualizada = await this.prisma.publicacion.update({
       where: { id },
-      data: { estado },
+      data: { estado: estadoFinal },
       include: {
         multimedia: {
           orderBy: { orden: 'asc' },

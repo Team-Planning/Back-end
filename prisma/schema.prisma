@@ -24,6 +24,7 @@ model publicacion {
   fecha_eliminacion   DateTime?     // Fecha en que se marcó como eliminado (para borrado automático después de 1 mes)
   multimedia          multimedia[]
   moderaciones        moderacion[]
+  precio              Float         @default(0) // Precio de la publicación
 
   @@map("publicaciones")
 }
